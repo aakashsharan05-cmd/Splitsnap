@@ -1,0 +1,164 @@
+const { GoogleGenAI } = require("@google/genai");
+const fs = require("fs");
+
+const client = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
+});
+
+function validateReceiptData(data) {
+
+    if (!data || typeof data !== "object") {
+        return false;
+    }
+
+    if (
+        typeof data.merchant !== "string" ||
+        data.merchant.trim() === ""
+    ) {
+        return false;
+    }
+
+    if (
+        typeof data.totalAmount !== "number" ||
+        !Number.isFinite(data.totalAmount) ||
+        data.totalAmount <= 0
+    ) {
+        return false;
+    }
+
+    if (
+        typeof data.date !== "string" ||
+        data.date.trim() === ""
+    ) {
+        return false;
+    }
+
+    if (
+        typeof data.category !== "string" ||
+        data.category.trim() === ""
+    ) {
+        return false;
+    }
+
+    if (!Array.isArray(data.items)) {
+        return false;
+    }
+
+    for (const item of data.items) {
+
+        if (
+            typeof item.name !== "string" ||
+            item.name.trim() === ""
+        ) {
+            return false;
+        }
+
+        if (
+            typeof item.amount !== "number" ||
+            item.amount < 0
+        ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+async function extractReceiptData(imagePath) {
+
+    const imageBytes = fs.readFileSync(imagePath);
+
+    const imageBase64 = imageBytes.toString("base64");
+    const receiptSchema = {
+        type: "object",
+
+        properties: {
+            merchant: {
+                type: "string"
+            },
+
+            totalAmount: {
+                type: "number"
+            },
+
+            date: {
+                type: "string"
+            },
+
+            category: {
+                type: "string"
+            },
+
+            items: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        name: {
+                            type: "string"
+                        },
+                        amount: {
+                            type: "number"
+                        }
+                    },
+                    required: ["name", "amount"]
+                }
+            }
+        },
+
+        required: [
+            "merchant",
+            "totalAmount",
+            "date",
+            "category",
+            "items"
+        ]
+    };
+
+    const interaction = await client.interactions.create({
+        model: "gemini-3.7-flash",
+
+        input: [
+            {
+                type: "text",
+                text: `Read this receipt and extract:
+            merchant name,
+            total amount,
+            date,
+            category,
+            and all items with their amounts.`
+            },
+            {
+                type: "image",
+                data: imageBase64,
+                mime_type: "image/png"
+            }
+        ],
+
+        response_format: {
+            type: "text",
+            mime_type: "application/json",
+            schema: receiptSchema
+        }
+    });
+
+
+
+
+    let receiptData;
+
+    try {
+        receiptData = JSON.parse(interaction.output_text);
+    } catch (error) {
+        throw new Error("Gemini returned invalid JSON");
+    }
+
+    if (!validateReceiptData(receiptData)) {
+        throw new Error("Invalid receipt data returned by Gemini");
+    }
+
+    return receiptData;
+}
+
+
+module.exports = { extractReceiptData };
