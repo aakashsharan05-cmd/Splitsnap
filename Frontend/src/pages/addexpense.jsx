@@ -88,7 +88,7 @@ const Addexpense = () => {
                         <p>Category</p>
                     </div>
 
-                    <div className="flex items-start mt-5 gap-2">
+                    <div className="flex items-start mt-5 flex-wrap gap-2">
 
                         {/* Food */}
                         <button
