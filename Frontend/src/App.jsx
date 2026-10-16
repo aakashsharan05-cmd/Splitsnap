@@ -7,6 +7,8 @@ import Groupdetails from "./pages/groupdetails";
 import Addexpense from "./pages/addexpense";
 import Choosesplit from "./pages/choosesplit"
 import Creategroup from "./pages/creategroup"
+import Settleup from "./pages/settleup"
+import Groupsetting from "./pages/groupsetting"
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
       <Route path="/addexpense" element={<Addexpense />} />
        <Route path="/choosesplit" element={<Choosesplit />} />
         <Route path="/creategroup" element={<Creategroup />} />
+         <Route path="/settleup" element={<Settleup />} />
+          <Route path="/groupsetting" element={<Groupsetting />} />
     </Routes>
   );
 }
