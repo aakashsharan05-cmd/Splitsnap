@@ -3,12 +3,12 @@ const router = express.Router();
 
 const authMiddleware = require("../middleware/authmiddleware");
 
-const { createGroup } = require("../controllers/groupController");
+const { createGroup, getGroups } = require("../controllers/groupController");
 const { addMember, getMembers } = require("../controllers/groupMemberController");
 const { balanceController } = require("../controllers/balanceController");
 
 router.post("/", authMiddleware, createGroup);
-
+router.get("/", authMiddleware, getGroups);
 router.post("/:groupId/members", authMiddleware, addMember);
 
 router.get("/:groupId/members", authMiddleware, getMembers);
