@@ -8,7 +8,7 @@ const expenseSplit = async (req, res) => {
         const groupId = req.params.groupId;
         const paidBy = req.body.paidBy;
 
-      
+
         const isExist = await GroupMember.findOne({
             userId: requesterId,
             groupId
@@ -20,7 +20,7 @@ const expenseSplit = async (req, res) => {
             });
         }
 
-      
+
         const isPaidByExist = await GroupMember.findOne({
             userId: paidBy,
             groupId
@@ -37,7 +37,7 @@ const expenseSplit = async (req, res) => {
         const category = req.body.category;
         const splitType = req.body.splitType;
 
-    if (splitType === "equal") {
+        if (splitType === "equal") {
 
             const members = await GroupMember.find({
                 groupId
@@ -66,7 +66,7 @@ const expenseSplit = async (req, res) => {
             });
         }
 
-  
+
         else if (splitType === "exact") {
 
             const split = req.body.splits;
@@ -94,14 +94,14 @@ const expenseSplit = async (req, res) => {
             });
         }
 
-  
+
         else if (splitType === "percentage") {
 
             const sp = req.body.splits;
 
             let sum = 0;
 
-           
+
             for (const s of sp) {
                 sum += s.percentage;
             }
@@ -114,7 +114,7 @@ const expenseSplit = async (req, res) => {
 
             const splits = [];
 
-           
+
             for (const s of sp) {
 
                 const userAmount = amount * s.percentage / 100;
@@ -154,4 +154,38 @@ const expenseSplit = async (req, res) => {
     }
 };
 
-module.exports = { expenseSplit };
+const getGroupExpenses = async (req, res) => {
+
+
+    try {
+        const { groupId } = req.params;
+
+        const userId = req.user.userId
+
+        const isExist = await GroupMember.findOne({
+            userId,
+            groupId
+        });
+
+        if (!isExist) {
+            return res.status(403).json({
+                message: "Requester is not in the group"
+            });
+        }
+        const expenses = await Expense.find({ groupId }).populate('paidBy', 'name email').sort({ createdAt: -1 })
+
+        return res.status(200).json({
+            expenses
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Server error",
+            error: error.message
+        });
+    }
+}
+
+
+
+module.exports = { expenseSplit, getGroupExpenses };

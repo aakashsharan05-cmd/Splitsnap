@@ -1,25 +1,74 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 const ChooseSplit = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const expense = location.state;
 
     const [splitType, setSplitType] = useState("Equal");
+    const [selectedMembers, setSelectedMembers] = useState([]);
+      const [membersShare, setMembersShare] = useState([]);
+    const [error, setError] = useState("");
+    const [members, setMembers] = useState([]);
+    const { groupId } = useParams();
 
-    const [selectedMembers, setSelectedMembers] = useState([
-        "You",
-        "Riya",
-        "Kabir",
-        "Dev",
-    ]);
+    useEffect(() => {
+        const fetchGroupDetails = async () => {
+            try {
+                const token = localStorage.getItem("token");
 
-    const members = [
-        { name: "You", initial: "Y", color: "#8B527D" },
-        { name: "Riya", initial: "R", color: "#A58B5B" },
-        { name: "Kabir", initial: "K", color: "#C94B35" },
-        { name: "Dev", initial: "D", color: "#315878" },
-    ];
+                if (!token) {
+                    navigate("/login", { replace: true });
+                    return;
+                }
+
+                const headers = {
+                    Authorization: `Bearer ${token}`,
+                };
+
+                const [membersResponse] =
+                    await Promise.all([
+                        fetch(
+                            `http://localhost:5000/api/groups/${groupId}/members`,
+                            { headers }
+                        ),
+
+                    ]);
+
+                const [membersData] = await Promise.all([
+                    membersResponse.json()
+                ]);
+
+                if (!membersResponse.ok) {
+                    throw new Error(
+                        membersData.message || "Failed to fetch members"
+                    );
+                }
+
+
+
+                setMembers(membersData.members || []);
+                const fetchedMembers = membersData.members || [];
+
+                setMembers(fetchedMembers);
+
+                setSelectedMembers(
+                    fetchedMembers.map((member) => {
+                        const user = member.userId;
+                        return user?._id || user;
+                    })
+                );
+
+            } catch (err) {
+                setError(err.message || "Something went wrong.");
+            }
+        };
+
+        fetchGroupDetails();
+    }, [groupId, navigate]);
+
 
     const toggleMember = (name) => {
         setSelectedMembers((prev) =>
@@ -28,6 +77,7 @@ const ChooseSplit = () => {
                 : [...prev, name]
         );
     };
+
 
     return (
         <div className="min-h-screen bg-[#F8F4EA] px-5 py-8 text-[#211F1B]">
@@ -48,7 +98,7 @@ const ChooseSplit = () => {
                         </h1>
 
                         <p className="text-sm text-[#756F65] mt-1">
-                            Dinner · ₹2,000.00
+                            {expense?.description} · ₹{Number(expense?.amount || 0).toFixed(2)}
                         </p>
                     </div>
                 </div>
@@ -73,13 +123,18 @@ const ChooseSplit = () => {
                 </div>
 
                 {/* Members list */}
+
                 <div className="mt-6 bg-[#FFFDF8] px-5 py-2 shadow-sm">
                     {members.map((member, index) => {
-                        const isSelected = selectedMembers.includes(member.name);
+                        const user = member.userId;
+                        const userId = user?._id || user;
+                        const name = user?.name || member.name || "User";
+
+                        const isSelected = selectedMembers.includes(userId);
 
                         return (
                             <div
-                                key={member.name}
+                                key={userId}
                                 className={`flex items-center justify-between gap-3 py-5 ${index !== members.length - 1
                                     ? "border-b border-dashed border-[#DED6C7]"
                                     : ""
@@ -87,8 +142,8 @@ const ChooseSplit = () => {
                             >
                                 <div className="flex items-center gap-3">
                                     <button
-                                        onClick={() => toggleMember(member.name)}
-                                        aria-label={`Toggle ${member.name}`}
+                                        onClick={() => toggleMember(userId)}
+                                        aria-label={`Toggle ${name}`}
                                         className={`w-6 h-6 shrink-0 rounded-md border-2 flex items-center justify-center ${isSelected
                                             ? "bg-[#316B52] border-[#316B52] text-white"
                                             : "border-[#C9B99A] bg-transparent"
@@ -99,19 +154,22 @@ const ChooseSplit = () => {
 
                                     <div
                                         className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-white font-semibold border-[3px] border-[#E8DFD0]"
-                                        style={{ backgroundColor: member.color }}
+                                        style={{ backgroundColor: member.color || "#8B527D" }}
                                     >
-                                        {member.initial}
+                                        {name.charAt(0).toUpperCase()}
                                     </div>
 
                                     <span className="font-medium">
-                                        {member.name}
+                                        {name}
                                     </span>
                                 </div>
 
                                 <span className="text-sm whitespace-nowrap">
                                     {isSelected && selectedMembers.length > 0
-                                        ? `₹${(2000 / selectedMembers.length).toFixed(2)}`
+                                        ? `₹${(
+                                            Number(expense?.amount || 0) /
+                                            selectedMembers.length
+                                        ).toFixed(2)}`
                                         : "—"}
                                 </span>
                             </div>

@@ -1,67 +1,109 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const members = [
-  {
-    name: "Riya Sharma",
-    email: "riya@example.com",
-    initial: "R",
-    color: "#A58B5B",
-  },
-  {
-    name: "Kabir Mehta",
-    email: "kabir@example.com",
-    initial: "K",
-    color: "#C94B35",
-  },
-  {
-    name: "Dev Kumar",
-    email: "dev@example.com",
-    initial: "D",
-    color: "#315878",
-  },
-];
 
 const CreateGroup = () => {
   const navigate = useNavigate();
 
   const [groupName, setGroupName] = useState("");
-  const [memberName, setMemberName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("✈️");
-  const [selectedMembers, setSelectedMembers] = useState([
-    "riya@example.com",
-    "kabir@example.com",
-    "dev@example.com",
-  ]);
+
+  const [memberName, setMemberName] = useState("");
+  const [users, setUsers] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState([]);
+
   const [alertLimit, setAlertLimit] = useState("1000");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const icons = ["✈️", "🏠", "🎉", "🍕", "🏕️"];
 
-  const filteredMembers = members.filter((member) => {
-    const search = memberName.toLowerCase().trim();
-    return (
-      member.name.toLowerCase().includes(search) ||
-      member.email.toLowerCase().includes(search)
-    );
-  });
+  // Search registered users from the backend
+  useEffect(() => {
+    let ignore = false;
 
+    const searchUsers = async () => {
+      const search = memberName.trim();
+
+      if (!search) {
+        setUsers([]);
+        setSearchLoading(false);
+        return;
+      }
+
+      try {
+        setSearchLoading(true);
+
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const response = await fetch(
+          `http://localhost:5000/api/users?search=${encodeURIComponent(search)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Unable to search users.");
+        }
+
+        if (!ignore) {
+          setUsers(data.users || []);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setUsers([]);
+          setError(err.message || "Unable to search users.");
+        }
+      } finally {
+        if (!ignore) {
+          setSearchLoading(false);
+        }
+      }
+    };
+
+    searchUsers();
+
+    return () => {
+      ignore = true;
+    };
+  }, [memberName, navigate]);
+
+  // Select or deselect a user using their MongoDB ID
+  const toggleMember = (userId) => {
+    setSelectedMembers((previous) =>
+      previous.includes(userId)
+        ? previous.filter((id) => id !== userId)
+        : [...previous, userId]
+    );
+  };
+
+  // Create group first, then add selected members
   const createGroups = async () => {
     if (creating) return;
 
     setError("");
-    setSuccess("");
 
     if (!groupName.trim()) {
       setError("Please enter a group name.");
       return;
     }
 
-    if (alertLimit.trim() === "" || !Number.isFinite(Number(alertLimit)) ||
-        Number(alertLimit) < 0) {
+    if (
+      alertLimit.trim() === "" ||
+      !Number.isFinite(Number(alertLimit)) ||
+      Number(alertLimit) < 0
+    ) {
       setError("Please enter a valid alert limit.");
       return;
     }
@@ -73,24 +115,22 @@ const CreateGroup = () => {
       return;
     }
 
-    try {
-      setCreating(true);
+    setCreating(true);
 
-      const response = await fetch(
-        "http://localhost:5000/api/groups",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: groupName.trim(),
-            alertLimit: Number(alertLimit),
-            icon: selectedIcon,
-          }),
-        }
-      );
+    try {
+      // Step 1: Create the group
+      const response = await fetch("http://localhost:5000/api/groups", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: groupName.trim(),
+          alertLimit: Number(alertLimit),
+          icon: selectedIcon,
+        }),
+      });
 
       const data = await response.json();
 
@@ -104,9 +144,48 @@ const CreateGroup = () => {
         throw new Error(data.message || "Unable to create group.");
       }
 
-      setSuccess("Group created successfully!");
+      // Backend must return the created group's ID.
+      const groupId = data.group?._id || data.groupId;
 
-      // Group creation is complete. Member addition is a separate API step.
+      if (!groupId) {
+        throw new Error(
+          "Group was created, but its ID was not returned. Update the createGroup backend response."
+        );
+      }
+
+      // Step 2: Add each selected user to the group
+      for (const userId of selectedMembers) {
+        const memberResponse = await fetch(
+          `http://localhost:5000/api/groups/${groupId}/members`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ userId }),
+          }
+        );
+
+        const memberData = await memberResponse.json();
+
+        if (
+          memberResponse.status === 401 ||
+          memberResponse.status === 403
+        ) {
+          localStorage.removeItem("token");
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        if (!memberResponse.ok) {
+          throw new Error(
+            memberData.message ||
+            "Group created, but a member could not be added."
+          );
+        }
+      }
+
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong.");
@@ -177,11 +256,10 @@ const CreateGroup = () => {
                   type="button"
                   aria-pressed={selectedIcon === icon}
                   onClick={() => setSelectedIcon(icon)}
-                  className={`h-12 w-12 rounded-xl bg-[#F5E3CB] text-2xl ${
-                    selectedIcon === icon
+                  className={`h-12 w-12 rounded-xl bg-[#F5E3CB] text-2xl ${selectedIcon === icon
                       ? "ring-2 ring-[#211F1B]"
                       : ""
-                  }`}
+                    }`}
                 >
                   {icon}
                 </button>
@@ -190,7 +268,7 @@ const CreateGroup = () => {
           </div>
         </div>
 
-        {/* Members */}
+        {/* Search and select members */}
         <div className="mt-5 w-full rounded-2xl border border-[#DED6C7] bg-[#FFFDF8] p-6">
           <div className="mt-1 flex items-center justify-between">
             <span className="text-sm text-[#756F65]">Add Members</span>
@@ -202,44 +280,60 @@ const CreateGroup = () => {
           <input
             type="text"
             value={memberName}
-            onChange={(e) => setMemberName(e.target.value)}
+            onChange={(e) => {
+              setMemberName(e.target.value);
+              setError("");
+            }}
             className="mt-4 h-14 w-full rounded-xl border border-[#DED6C7] bg-[#FFFDF8] px-4"
             placeholder="🔍 Search by email or name"
           />
 
-          {filteredMembers.length === 0 && (
+          {searchLoading && (
             <p className="mt-4 text-sm text-[#756F65]">
-              No matching members found.
+              Searching users...
             </p>
           )}
 
-          {filteredMembers.map((member) => {
-            const isSelected = selectedMembers.includes(member.email);
+          {!searchLoading &&
+            memberName.trim() &&
+            users.length === 0 && (
+              <p className="mt-4 text-sm text-[#756F65]">
+                No matching members found.
+              </p>
+            )}
+
+          {users.map((user) => {
+            const isSelected = selectedMembers.includes(user._id);
 
             return (
               <button
                 type="button"
-                key={member.email}
-                onClick={() =>
-                  setSelectedMembers((previous) =>
-                    previous.includes(member.email)
-                      ? previous.filter((email) => email !== member.email)
-                      : [...previous, member.email]
-                  )
-                }
+                key={user._id}
+                onClick={() => toggleMember(user._id)}
+                aria-pressed={isSelected}
                 className="mt-5 flex w-full items-center gap-4 text-left"
               >
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-full text-xl font-semibold text-white"
-                  style={{ backgroundColor: member.color }}
-                >
-                  {member.initial}
+
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#A58B5B] text-xl font-semibold text-white">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    user.name?.charAt(0)?.toUpperCase() || "U"
+                  )}
                 </div>
 
-                <div className="flex-1">
-                  <p className="font-semibold">{member.name}</p>
-                  <p className="mt-1 text-sm text-[#756F65]">
-                    {member.email}
+
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{user.name}</p>
+                  <p className="mt-1 break-all text-sm text-[#756F65]">
+                    {user.email}
                   </p>
                 </div>
 
@@ -275,16 +369,10 @@ const CreateGroup = () => {
           </p>
         </div>
 
-        {/* Error / success */}
+        {/* Error */}
         {error && (
           <p role="alert" className="mt-4 text-sm text-red-600">
             {error}
-          </p>
-        )}
-
-        {success && (
-          <p role="status" className="mt-4 text-sm text-green-700">
-            {success}
           </p>
         )}
 

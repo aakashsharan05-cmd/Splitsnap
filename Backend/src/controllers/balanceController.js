@@ -4,6 +4,7 @@ const Expense = require("../model/expense.model");
 
 const balanceController = async (req, res) => {
     try {
+
         const requesterId = req.user.userId;
         const groupId = req.params.groupId;
 
@@ -24,10 +25,14 @@ const balanceController = async (req, res) => {
         const settlement = await Settlement.find({
             groupId
         });
-        const members = await GroupMember.find({
-            groupId
-        });
-        const finalAmount = [];
+        const members = await GroupMember.find({ groupId }).populate(
+            "userId",
+            "name email avatar"
+        );
+        const finalAmount = members.map((member) => ({
+            user: member.userId,
+            balance: 0,
+        }));
 
         for (const member of members) {
             finalAmount.push({
@@ -54,7 +59,7 @@ const balanceController = async (req, res) => {
                 splitBalance.balance -= split.amount;
             }
         }
-         for (const s of settlement) {
+        for (const s of settlement) {
             const paidId = s.from;
             const to = s.to;
             const amount = s.amount;
@@ -64,7 +69,7 @@ const balanceController = async (req, res) => {
             );
 
             userFromBalance.balance += amount;
-             const usertoBalance = finalAmount.find(
+            const usertoBalance = finalAmount.find(
                 x => x.user.toString() === to.toString()
             );
 
@@ -75,7 +80,7 @@ const balanceController = async (req, res) => {
             finalAmount
         });
 
-       
+
 
     } catch (error) {
         res.status(500).json({
