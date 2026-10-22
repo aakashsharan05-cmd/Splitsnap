@@ -2,92 +2,101 @@ const GroupMember = require("../model/group.member.model");
 const Settlement = require("../model/settlement.model");
 const Expense = require("../model/expense.model");
 
+
 const balanceController = async (req, res) => {
     try {
-
         const requesterId = req.user.userId;
-        const groupId = req.params.groupId;
+        const { groupId } = req.params;
 
+        // Verify requester belongs to the group
         const isExist = await GroupMember.findOne({
             userId: requesterId,
-            groupId
+            groupId,
         });
 
         if (!isExist) {
             return res.status(403).json({
-                message: "Requester is not in the group"
+                message: "Requester is not in the group",
             });
         }
 
-        const expenses = await Expense.find({
-            groupId
-        });
-        const settlement = await Settlement.find({
-            groupId
-        });
-        const members = await GroupMember.find({ groupId }).populate(
-            "userId",
-            "name email avatar"
-        );
-        const finalAmount = members.map((member) => ({
-            user: member.userId,
-            balance: 0,
-        }));
+        // Fetch expenses, settlements and group members
+        const [expenses, settlements, members] = await Promise.all([
+            Expense.find({ groupId }),
+            Settlement.find({ groupId }),
+            GroupMember.find({ groupId }).populate(
+                "userId",
+                "name email avatar"
+            ),
+        ]);
 
-        for (const member of members) {
-            finalAmount.push({
-                user: member.userId,
-                balance: 0
-            });
-        }
-        for (const e of expenses) {
-            const paidId = e.paidBy;
-            const amount = e.amount;
-            const splits = e.splits;
+        // Initialize one balance entry per group member
+        const finalAmount = members.map((member) => {
+            if (!member.userId) {
+                throw new Error(
+                    `Group member ${member._id} has no associated user`
+                );
+            }
 
-            const userBalance = finalAmount.find(
-                x => x.user.toString() === paidId.toString()
+            return {
+                user: member.userId._id,
+                name: member.userId.name,
+                balance: 0,
+            };
+        });
+
+        // Helper: find a member's balance safely
+        const getBalance = (userId) => {
+            const balance = finalAmount.find(
+                (item) =>
+                    item.user.toString() === userId.toString()
             );
 
-            userBalance.balance += amount;
-
-            for (const split of splits) {
-                const splitBalance = finalAmount.find(
-                    x => x.user.toString() === split.user.toString()
+            if (!balance) {
+                throw new Error(
+                    `User ${userId} is not present in group balances`
                 );
+            }
 
-                splitBalance.balance -= split.amount;
+            return balance;
+        };
+
+        // Apply expenses
+        for (const expense of expenses) {
+            const paidId = expense.paidBy;
+            const amount = Number(expense.amount);
+
+            // Payer receives credit for the full expense
+            getBalance(paidId).balance += amount;
+
+            // Each participant owes their share
+            for (const split of expense.splits) {
+                getBalance(split.user).balance -= Number(split.amount);
             }
         }
-        for (const s of settlement) {
-            const paidId = s.from;
-            const to = s.to;
-            const amount = s.amount;
 
-            const userFromBalance = finalAmount.find(
-                x => x.user.toString() === paidId.toString()
-            );
+        // Apply settlements
+        for (const settlement of settlements) {
+            const fromBalance = getBalance(settlement.from);
+            const toBalance = getBalance(settlement.to);
+            const amount = Number(settlement.amount);
 
-            userFromBalance.balance += amount;
-            const usertoBalance = finalAmount.find(
-                x => x.user.toString() === to.toString()
-            );
-
-            usertoBalance.balance -= amount;
+            fromBalance.balance += amount;
+            toBalance.balance -= amount;
         }
 
         return res.status(200).json({
-            finalAmount
+            finalAmount,
         });
-
-
-
     } catch (error) {
-        res.status(500).json({
+        console.error("Balance controller error:", error);
+
+        return res.status(500).json({
             message: "Server error",
-            error: error.message
+            error: error.message,
         });
     }
-}
+};
+
 
 module.exports = { balanceController } 

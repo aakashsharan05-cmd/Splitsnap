@@ -28,7 +28,7 @@ function App() {
       <Route path="/groups/:groupId/settings" element={<Groupsetting />} />
 
       {/* Create group */}
-      <Route path="/create-group" element={<Creategroup />} />
+      <Route path="/creategroup" element={<Creategroup />} />
     </Routes>
   );
 }

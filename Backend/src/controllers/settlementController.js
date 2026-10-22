@@ -13,6 +13,7 @@ const settlementController = async (req, res) => {
             groupId
         });
 
+
         if (!isExist) {
             return res.status(403).json({
                 message: "Requester is not in the group"
@@ -28,10 +29,11 @@ const settlementController = async (req, res) => {
                 message: "User is not in the group"
             });
         }
-        const amount = req.body.amount;
-        if (amount <= 0) {
+        const amount = Number(req.body.amount);
+
+        if (!Number.isFinite(amount) || amount <= 0) {
             return res.status(400).json({
-                message: "Amount must be greater than 0"
+                message: "Amount must be a valid positive number"
             });
         }
         await Settlement.create({

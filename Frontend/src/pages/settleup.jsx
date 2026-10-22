@@ -1,30 +1,56 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
 
 const SettleUp = () => {
   const navigate = useNavigate();
+  const { groupId } = useParams();
+  const [balances, setBalances] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [settlement, setSettlement] = useState([]);
 
-  const members = [
-    {
-      name: "Riya Sharma",
-      email: "riya@example.com",
-      initial: "R",
-      amount: 1830,
-      direction: "Riya pays you",
-      subtitle: "settles their full balance",
-      color: "#A58B5B",
-    },
-    {
-      name: "Kabir Mehta",
-      email: "kabir@example.com",
-      initial: "K",
-      amount: 420,
-      direction: "You pay Kabir",
-      subtitle: "settles their full balance",
-      color: "#C94B35",
-    },
-  ];
 
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const response = await fetch(
+          `http://localhost:5000/api/groups/${groupId}/balance`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+       
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch balances"
+          );
+        }
+
+        setBalances(data.finalAmount || []);
+         
+      const  creditor = balances.filter(num => num.balance > 0)
+      const  debtors   = balances.filter(num => num.balance < 0)
+      } catch (err) {
+        setError(err.message || "Something went wrong");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBalance();
+  }, [groupId, navigate]);
   return (
     <div className="min-h-screen bg-[#F8F4EA] px-5 py-5 text-[#211F1B]">
       <div className="max-w-xl mx-auto">
@@ -116,7 +142,7 @@ const SettleUp = () => {
         {/* Settle entire group */}
         <button
           type="button"
-          
+
           className="mt-6 w-full flex items-center justify-center gap-3 rounded-2xl bg-[#211F1B] px-4 py-4 text-white font-semibold hover:bg-[#39352F] transition"
         >
           <span aria-hidden="true">🎉</span>
