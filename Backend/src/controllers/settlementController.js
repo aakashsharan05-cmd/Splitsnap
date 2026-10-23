@@ -6,7 +6,8 @@ const settlementController = async (req, res) => {
         const requesterId = req.user.userId;
         const groupId = req.params.groupId;
 
-        const toUserId = req.body.userId;
+        const fromUserId = requesterId;
+        const toUserId = req.body.to;
 
         const isExist = await GroupMember.findOne({
             userId: requesterId,
@@ -19,6 +20,17 @@ const settlementController = async (req, res) => {
                 message: "Requester is not in the group"
             });
         }
+         const isFromExist = await GroupMember.findOne({
+            userId: fromUserId,
+            groupId
+        });
+
+
+        if (!isFromExist) {
+            return res.status(403).json({
+                message: "payer is not in the group"
+            });
+        }
         const isToExist = await GroupMember.findOne({
             userId: toUserId,
             groupId
@@ -27,6 +39,12 @@ const settlementController = async (req, res) => {
         if (!isToExist) {
             return res.status(403).json({
                 message: "User is not in the group"
+            });
+        }
+
+        if(fromUserId===toUserId){
+              return res.status(400).json({
+                message: "Payer and Reciever are same"
             });
         }
         const amount = Number(req.body.amount);
