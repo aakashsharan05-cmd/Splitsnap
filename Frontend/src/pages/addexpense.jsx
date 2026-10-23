@@ -31,11 +31,11 @@ const Addexpense = () => {
                 const [membersResponse, groupResponse] =
                     await Promise.all([
                         fetch(
-                            `http://localhost:5000/api/groups/${groupId}/members`,
+                            `${import.meta.env.VITE_API_URL}/api/groups/${groupId}/members`,
                             { headers }
                         ),
                         fetch(
-                            `http://localhost:5000/api/groups/${groupId}`,
+                            `${import.meta.env.VITE_API_URL}/api/groups/${groupId}`,
                             { headers }
                         ),
                     ]);

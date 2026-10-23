@@ -28,7 +28,7 @@ const ChooseSplit = () => {
                 }
 
                 const response = await fetch(
-                    `http://localhost:5000/api/groups/${groupId}/members`,
+                    `${import.meta.env.VITE_API_URL}/api/groups/${groupId}/members`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -224,7 +224,7 @@ const ChooseSplit = () => {
             setSaving(true);
 
             const response = await fetch(
-                `http://localhost:5000/api/expenses/${groupId}`,
+                `${import.meta.env.VITE_API_URL}/api/expenses/${groupId}`,
                 {
                     method: "POST",
                     headers: {

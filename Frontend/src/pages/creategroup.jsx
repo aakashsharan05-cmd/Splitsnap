@@ -43,7 +43,7 @@ const CreateGroup = () => {
         }
 
         const response = await fetch(
-          `http://localhost:5000/api/users?search=${encodeURIComponent(search)}`,
+          `${import.meta.env.VITE_API_URL}/api/users?search=${encodeURIComponent(search)}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -119,7 +119,7 @@ const CreateGroup = () => {
 
     try {
       // Step 1: Create the group
-      const response = await fetch("http://localhost:5000/api/groups", {
+      const response = await fetch("${import.meta.env.VITE_API_URL}/api/groups", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -156,7 +156,7 @@ const CreateGroup = () => {
       // Step 2: Add each selected user to the group
       for (const userId of selectedMembers) {
         const memberResponse = await fetch(
-          `http://localhost:5000/api/groups/${groupId}/members`,
+          `${import.meta.env.VITE_API_URL}/api/groups/${groupId}/members`,
           {
             method: "POST",
             headers: {

@@ -23,7 +23,7 @@ const Dashboard = () => {
         }
 
         const response = await fetch(
-          "http://localhost:5000/api/groups",
+          "${import.meta.env.VITE_API_URL}/api/groups",
           {
             method: "GET",
             headers: {
@@ -70,7 +70,7 @@ const Dashboard = () => {
       return;
     }
 
-    fetch("http://localhost:5000/api/groups", {
+    fetch("${import.meta.env.VITE_API_URL}/api/groups", {
       headers: {
         Authorization: `Bearer ${token}`,
       },

@@ -22,7 +22,7 @@ const SettleUp = () => {
         }
 
         const response = await fetch(
-          `http://localhost:5000/api/groups/${groupId}/balance`,
+          `${import.meta.env.VITE_API_URL}/api/groups/${groupId}/balance`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -70,7 +70,9 @@ const SettleUp = () => {
     const n = ccreditor.length
     const m = cdebitors.length
     while (i < n && j < m) {
-      const payment = Math.min(ccreditor[i].balance, cdebitors[j].balance)
+      const payment = Math.round(
+        Math.min(ccreditor[i].balance, cdebitors[j].balance) * 100
+      ) / 100
       const settle = {
         from: cdebitors[j].user,
         to: ccreditor[i].user,
@@ -81,8 +83,8 @@ const SettleUp = () => {
       sSettlement.push(settle)
       ccreditor[i].balance -= payment
       cdebitors[j].balance -= payment
-      if (ccreditor[i].balance === 0) i++
-      if (cdebitors[j].balance === 0) j++
+      if ( Math.abs(ccreditor[i].balance) < 0.01) i++
+      if (Math.abs(cdebitors[j].balance) < 0.01) j++
     }
     return { ccreditor, cdebitors, sSettlement }
 
