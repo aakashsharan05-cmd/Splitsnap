@@ -20,17 +20,10 @@ const settlementController = async (req, res) => {
                 message: "Requester is not in the group"
             });
         }
-         const isFromExist = await GroupMember.findOne({
-            userId: fromUserId,
-            groupId
-        });
 
 
-        if (!isFromExist) {
-            return res.status(403).json({
-                message: "payer is not in the group"
-            });
-        }
+
+
         const isToExist = await GroupMember.findOne({
             userId: toUserId,
             groupId
@@ -42,16 +35,31 @@ const settlementController = async (req, res) => {
             });
         }
 
-        if(fromUserId===toUserId){
-              return res.status(400).json({
-                message: "Payer and Reciever are same"
+        if (String(fromUserId) === String(toUserId)) {
+            return res.status(400).json({
+                message: "Payer and receiver are the same"
             });
         }
+       
         const amount = Number(req.body.amount);
 
         if (!Number.isFinite(amount) || amount <= 0) {
             return res.status(400).json({
                 message: "Amount must be a valid positive number"
+            });
+        }
+        const userBalance = balances.find(
+            item => String(item.user) === String(requesterId)
+        );
+        if(userBalance.balance===0 || userBalance.balance>0){
+             return res.status(400).json({
+                message: "Aleady paid"
+            })
+        }
+        const outstanding = Math.abs(userBalance.balance);
+        if(outstanding<amount){
+              return res.status(400).json({
+                message: "Amount must be a less than outstanding balance"
             });
         }
         await Settlement.create({
