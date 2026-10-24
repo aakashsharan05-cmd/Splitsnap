@@ -197,7 +197,7 @@ if (!response.ok) {
                   </div>
 
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm sm:text-base text-[#211F1B] break-words">
+                    <p className="font-semibold text-sm sm:text-base text-[#211F1B] wrap-word">
                       {member.fromName}
                     </p>
                     <p className="mt-1 text-sm text-[#756F65]">
@@ -208,7 +208,7 @@ if (!response.ok) {
 
                 {/* Amount and actions */}
                 <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end sm:gap-3">
-                  <div className="min-w-[100px] sm:text-right">
+                  <div className="min-w-25 sm:text-right">
                     <p className="text-xs text-[#756F65] mb-1 sm:hidden">
                       Suggested amount
                     </p>
