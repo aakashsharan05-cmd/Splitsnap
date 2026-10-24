@@ -23,7 +23,7 @@ const Dashboard = () => {
         }
 
         const response = await fetch(
-          "${import.meta.env.VITE_API_URL}/api/groups",
+          `${import.meta.env.VITE_API_URL}/api/groups`,
           {
             method: "GET",
             headers: {

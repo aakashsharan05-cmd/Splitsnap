@@ -9,7 +9,7 @@ const SettleUp = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [settlement, setSettlement] = useState([]);
-  const [paymentAmounts, setPaymentAmounts] = useState("");
+  const [paymentAmounts, setPaymentAmounts] = useState({});
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -37,7 +37,7 @@ const SettleUp = () => {
             data.message || "Failed to fetch balances"
           );
         }
-        const { creditor, debtors, sSettlement } = balanceCalculator(data.finalAmount);
+        const { sSettlement } = balanceCalculator(data.finalAmount);
         setSettlement(sSettlement);
         setBalances(data.finalAmount || []);
 
@@ -83,11 +83,53 @@ const SettleUp = () => {
       sSettlement.push(settle)
       ccreditor[i].balance -= payment
       cdebitors[j].balance -= payment
-      if ( Math.abs(ccreditor[i].balance) < 0.01) i++
+      if (Math.abs(ccreditor[i].balance) < 0.01) i++
       if (Math.abs(cdebitors[j].balance) < 0.01) j++
     }
     return { ccreditor, cdebitors, sSettlement }
 
+  }
+
+  const handleMarkPaid = async (member, enteredAmount) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      console.log("Logged-in user token:", localStorage.getItem("token"));
+      console.log("Suggested payer ID:", member.from);
+      console.log("Suggested receiver ID:", member.to);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/settlements/${groupId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: member.to,
+            amount: Number(enteredAmount),
+          }),
+        }
+      );
+
+   
+const data = await response.json();
+
+if (!response.ok) {
+  console.log("Settlement API error:", data);
+  throw new Error(
+    data.message || "Failed to fetch balances"
+  );
+}
+
+    } catch (err) {
+      setError(err.message || "Something went wrong");
+    }
   }
   return (
     <div className="min-h-screen bg-[#F8F4EA] px-5 py-5 text-[#211F1B]">
@@ -130,6 +172,10 @@ const SettleUp = () => {
         <h2 className="mt-8 mb-4 text-sm font-semibold uppercase tracking-wide text-[#756F65]">
           Suggested settlements
         </h2>
+
+
+        {loading && <p>Loading balances...</p>}
+        {error && <p className="text-red-600">{error}</p>}
 
         {/* Settlement card */}
 
@@ -199,11 +245,7 @@ const SettleUp = () => {
                       Number(enteredAmount) <= 0 ||
                       Number(enteredAmount) > member.amount
                     }
-                    onClick={() =>
-                      alert(
-                        `Next step: record ₹${Number(enteredAmount).toLocaleString("en-IN")} paid by ${member.fromName} to ${member.toName}.`
-                      )
-                    }
+                    onClick={() => handleMarkPaid(member, enteredAmount)}
                     className="rounded-full bg-[#211F1B] px-4 py-2.5 text-sm font-medium text-white whitespace-nowrap transition hover:bg-[#39352F] disabled:cursor-not-allowed disabled:bg-[#EAE4D8] disabled:text-[#A49B8D]"
                   >
                     Mark paid

@@ -1,5 +1,6 @@
 const Settlement = require("../model/settlement.model")
 const GroupMember = require("../model/group.member.model");
+const { getGroupBalances } = require("../services/balanceService");
 
 const settlementController = async (req, res) => {
     try {
@@ -40,7 +41,7 @@ const settlementController = async (req, res) => {
                 message: "Payer and receiver are the same"
             });
         }
-       
+
         const amount = Number(req.body.amount);
 
         if (!Number.isFinite(amount) || amount <= 0) {
@@ -48,20 +49,49 @@ const settlementController = async (req, res) => {
                 message: "Amount must be a valid positive number"
             });
         }
+        const balances = await getGroupBalances(groupId);
+
         const userBalance = balances.find(
             item => String(item.user) === String(requesterId)
         );
-        if(userBalance.balance===0 || userBalance.balance>0){
-             return res.status(400).json({
-                message: "Aleady paid"
-            })
+
+        if (!userBalance) {
+            return res.status(400).json({
+                message: "User balance not found"
+            });
         }
-        const outstanding = Math.abs(userBalance.balance);
-        if(outstanding<amount){
-              return res.status(400).json({
+
+        const balance = Math.round(userBalance.balance * 100) / 100;
+
+        if (balance >= 0) {
+            return res.status(400).json({
+                message: "You don't owe any money"
+            });
+        }
+
+        const outstanding = Math.abs(balance);
+        if (outstanding < amount) {
+            return res.status(400).json({
                 message: "Amount must be a less than outstanding balance"
             });
         }
+        const receiverBalance = balances.find(
+            item => String(item.user) === String(toUserId)
+        );
+        if (!receiverBalance) {
+            return res.status(400).json({
+                message: "User balance not found"
+            });
+        }
+        const receiverAmount = Math.round(receiverBalance.balance * 100) / 100;
+
+        if (receiverAmount <= 0) {
+            return res.status(400).json({
+                message: "Receiver is not owed any money"
+            });
+        }
+
+
         await Settlement.create({
             groupId,
             from: requesterId,
