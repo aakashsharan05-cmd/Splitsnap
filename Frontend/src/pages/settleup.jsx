@@ -10,6 +10,7 @@ const SettleUp = () => {
   const [error, setError] = useState("");
   const [settlement, setSettlement] = useState([]);
   const [paymentAmounts, setPaymentAmounts] = useState({});
+  const [currentUserId, setCurrentUserId] = useState("");
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -20,7 +21,13 @@ const SettleUp = () => {
           navigate("/login", { replace: true });
           return;
         }
+        const part = token.split(".")
+        const payloadString = atob(part[1].replace(/-/g, "+")
+          .replace(/_/g, "/")
+        )
+        const payload = JSON.parse(payloadString);
 
+        const userId = payload.userId;
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/groups/${groupId}/balance`,
           {
@@ -38,9 +45,15 @@ const SettleUp = () => {
           );
         }
         const { sSettlement } = balanceCalculator(data.finalAmount);
-        setSettlement(sSettlement);
-        setBalances(data.finalAmount || []);
 
+        const mySettlements = sSettlement.filter(
+          (member) => member.from === userId
+        );
+
+        setSettlement(mySettlements);
+        console.log("Settlement state data:", sSettlement);
+        setBalances(data.finalAmount || []);
+        console.log("API balances:", data.finalAmount);
 
       } catch (err) {
         setError(err.message || "Something went wrong");
@@ -55,7 +68,8 @@ const SettleUp = () => {
   const balanceCalculator = (balances) => {
     const creditor = balances.filter(num => num.balance > 0)
     const debtors = balances.filter(num => num.balance < 0)
-
+    console.log("Creditors:", creditor);
+    console.log("Debtors:", debtors);
     const ccreditor = creditor.map(item => ({
       ...item
     }));
@@ -86,7 +100,9 @@ const SettleUp = () => {
       if (Math.abs(ccreditor[i].balance) < 0.01) i++
       if (Math.abs(cdebitors[j].balance) < 0.01) j++
     }
+    console.log("Suggested settlements:", sSettlement);
     return { ccreditor, cdebitors, sSettlement }
+
 
   }
 
@@ -99,9 +115,11 @@ const SettleUp = () => {
         return;
       }
 
-      console.log("Logged-in user token:", localStorage.getItem("token"));
-      console.log("Suggested payer ID:", member.from);
-      console.log("Suggested receiver ID:", member.to);
+      const payload = JSON.parse(
+        atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+      );
+
+      console.log("Logged-in user ID:", payload.userId);
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/settlements/${groupId}`,
         {
@@ -117,15 +135,15 @@ const SettleUp = () => {
         }
       );
 
-   
-const data = await response.json();
 
-if (!response.ok) {
-  console.log("Settlement API error:", data);
-  throw new Error(
-    data.message || "Failed to fetch balances"
-  );
-}
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("Settlement API error:", data);
+        throw new Error(
+          data.message || "Failed to fetch balances"
+        );
+      }
 
     } catch (err) {
       setError(err.message || "Something went wrong");
@@ -181,79 +199,81 @@ if (!response.ok) {
 
 
         <div className="rounded-2xl bg-[#FFFDF8] px-4 sm:px-6 divide-y divide-dashed divide-[#DED6C7]">
-          {settlement.map((member) => {
-            const key = `${member.from}-${member.to}`;
-            const enteredAmount = paymentAmounts[key] ?? "";
 
-            return (
-              <div
-                key={key}
-                className="grid grid-cols-1 gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-              >
-                {/* Payer and receiver */}
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F1EBDD] text-[#211F1B] font-semibold ring-2 ring-[#DED6C7] ring-offset-2 ring-offset-[#FFFDF8]">
-                    {member.fromName?.charAt(0)?.toUpperCase() || "U"}
+          {
+            settlement.map((member) => {
+              const key = `${member.from}-${member.to}`;
+              const enteredAmount = paymentAmounts[key] ?? "";
+
+              return (
+                <div
+                  key={key}
+                  className="grid grid-cols-1 gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                >
+                  {/* Payer and receiver */}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F1EBDD] text-[#211F1B] font-semibold ring-2 ring-[#DED6C7] ring-offset-2 ring-offset-[#FFFDF8]">
+                      {member.fromName?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm sm:text-base text-[#211F1B] wrap-word">
+                        {member.fromName}
+                      </p>
+                      <p className="mt-1 text-sm text-[#756F65]">
+                        pays {member.toName}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm sm:text-base text-[#211F1B] wrap-word">
-                      {member.fromName}
-                    </p>
-                    <p className="mt-1 text-sm text-[#756F65]">
-                      pays {member.toName}
-                    </p>
+                  {/* Amount and actions */}
+                  <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end sm:gap-3">
+                    <div className="min-w-25 sm:text-right">
+                      <p className="text-xs text-[#756F65] mb-1 sm:hidden">
+                        Suggested amount
+                      </p>
+                      <span className="font-semibold text-sm sm:text-base text-[#176B52] whitespace-nowrap">
+                        ₹{member.amount.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                    </div>
+
+                    <input
+                      type="number"
+                      min="0.01"
+                      max={member.amount}
+                      step="0.01"
+                      value={enteredAmount}
+                      onChange={(e) =>
+                        setPaymentAmounts((prev) => ({
+                          ...prev,
+                          [key]: e.target.value,
+                        }))
+                      }
+                      placeholder="Amount (₹)"
+                      aria-label={`Payment amount from ${member.fromName} to ${member.toName}`}
+                      className="w-32 sm:w-36 rounded-full border border-[#D8CFBD] bg-transparent px-4 py-2.5 text-sm text-[#211F1B] outline-none transition focus:border-[#267653] focus:ring-2 focus:ring-[#267653]/15"
+                    />
+
+                    <button
+                      type="button"
+                      disabled={
+                        enteredAmount === "" ||
+                        !Number.isFinite(Number(enteredAmount)) ||
+                        Number(enteredAmount) <= 0 ||
+                        Number(enteredAmount) > member.amount
+                      }
+                      onClick={() => handleMarkPaid(member, enteredAmount)}
+                      className="rounded-full bg-[#211F1B] px-4 py-2.5 text-sm font-medium text-white whitespace-nowrap transition hover:bg-[#39352F] disabled:cursor-not-allowed disabled:bg-[#EAE4D8] disabled:text-[#A49B8D]"
+                    >
+                      Mark paid
+                    </button>
                   </div>
                 </div>
-
-                {/* Amount and actions */}
-                <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end sm:gap-3">
-                  <div className="min-w-25 sm:text-right">
-                    <p className="text-xs text-[#756F65] mb-1 sm:hidden">
-                      Suggested amount
-                    </p>
-                    <span className="font-semibold text-sm sm:text-base text-[#176B52] whitespace-nowrap">
-                      ₹{member.amount.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </span>
-                  </div>
-
-                  <input
-                    type="number"
-                    min="0.01"
-                    max={member.amount}
-                    step="0.01"
-                    value={enteredAmount}
-                    onChange={(e) =>
-                      setPaymentAmounts((prev) => ({
-                        ...prev,
-                        [key]: e.target.value,
-                      }))
-                    }
-                    placeholder="Amount (₹)"
-                    aria-label={`Payment amount from ${member.fromName} to ${member.toName}`}
-                    className="w-32 sm:w-36 rounded-full border border-[#D8CFBD] bg-transparent px-4 py-2.5 text-sm text-[#211F1B] outline-none transition focus:border-[#267653] focus:ring-2 focus:ring-[#267653]/15"
-                  />
-
-                  <button
-                    type="button"
-                    disabled={
-                      enteredAmount === "" ||
-                      !Number.isFinite(Number(enteredAmount)) ||
-                      Number(enteredAmount) <= 0 ||
-                      Number(enteredAmount) > member.amount
-                    }
-                    onClick={() => handleMarkPaid(member, enteredAmount)}
-                    className="rounded-full bg-[#211F1B] px-4 py-2.5 text-sm font-medium text-white whitespace-nowrap transition hover:bg-[#39352F] disabled:cursor-not-allowed disabled:bg-[#EAE4D8] disabled:text-[#A49B8D]"
-                  >
-                    Mark paid
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
           {settlement.length === 0 && !loading && (
             <p className="py-8 text-center text-sm text-[#756F65]">

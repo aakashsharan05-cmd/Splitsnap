@@ -19,6 +19,7 @@ const getGroupBalances = async (groupId) => {
                 balance: 0,
             };
         });
+       
         const getBalance = (userId) => {
             return finalAmount.find(
                 (item) => item.user.toString() === userId.toString()

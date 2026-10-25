@@ -38,27 +38,37 @@ const expenseSplit = async (req, res) => {
         const splitType = req.body.splitType;
 
         if (splitType === "equal") {
-
-            const members = await GroupMember.find({
-                groupId
-            });
+            const members = await GroupMember.find({ groupId });
 
             const totalMembers = members.length;
-            const share = amount / totalMembers;
+
+            if (totalMembers === 0) {
+                return res.status(400).json({
+                    message: "No members found in this group"
+                });
+            }
+
+            const totalPaise = Math.round(Number(amount) * 100);
+            const baseShare = Math.floor(totalPaise / totalMembers);
+            const remainder = totalPaise % totalMembers;
 
             const splits = [];
 
-            for (const member of members) {
+            for (let i = 0; i < totalMembers; i++) {
+                const member = members[i];
+
+                const sharePaise = baseShare + (i < remainder ? 1 : 0);
+
                 splits.push({
                     user: member.userId,
-                    amount: share
+                    amount: sharePaise / 100
                 });
             }
 
             await Expense.create({
                 groupId,
                 description,
-                amount,
+                amount: totalPaise / 100,
                 paidBy,
                 category,
                 splitType,

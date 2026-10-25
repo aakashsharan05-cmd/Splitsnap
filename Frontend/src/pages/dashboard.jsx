@@ -8,6 +8,7 @@ const Dashboard = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [totalBalance, setTotalBalance] = useState(0);
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -21,6 +22,16 @@ const Dashboard = () => {
           navigate("/login", { replace: true });
           return;
         }
+        const parts = token.split(".");
+        const payloadString = atob(
+          parts[1]
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+        );
+
+        const payload = JSON.parse(payloadString);
+
+        const userId = payload.userId;
 
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/groups`,
@@ -47,6 +58,51 @@ const Dashboard = () => {
         }
 
         setGroups(data.groups || []);
+        const allBalances = await Promise.all(
+          data.groups.map(async (group) => {
+            const balance = await fetch(
+              `${import.meta.env.VITE_API_URL}/api/groups/${group._id}/balance`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            const balanceData = await balance.json();
+
+            if (balance.status === 401 || balance.status === 403) {
+              localStorage.removeItem("token");
+              navigate("/login", { replace: true });
+              return;
+            }
+
+            if (!balance.ok) {
+              throw new Error(balanceData.message || "Failed to fetch balance");
+            }
+
+
+            return balanceData.finalAmount;
+          })
+        );
+        let totalBalance = 0;
+
+        for (const groupBalances of allBalances) {
+          console.log("Group balances:", groupBalances);
+
+          const userBalance = groupBalances.find(
+            (item) => String(item.user) === String(userId)
+          );
+
+          console.log("My balance in this group:", userBalance?.balance);
+
+          if (userBalance) {
+            totalBalance += userBalance.balance;
+          }
+        }
+
+        console.log("Combined balance:", totalBalance);
+        setTotalBalance(totalBalance);
       } catch (err) {
         setError(
           err.message || "Something went wrong. Please try again."
@@ -70,7 +126,7 @@ const Dashboard = () => {
       return;
     }
 
-    fetch("${import.meta.env.VITE_API_URL}/api/groups", {
+    fetch(`${import.meta.env.VITE_API_URL}/api/groups`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -118,10 +174,31 @@ const Dashboard = () => {
           ACROSS ALL GROUPS
         </h2>
 
-        <p className="font-mono text-4xl font-bold text-[#F8D99F]">
-          —
-        </p>
+        <div className="flex justify-between">
+          <p className="font-mono text-4xl font-bold text-[#F8D99F]">
+            ₹{totalBalance.toLocaleString("en-IN", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </p>
 
+          <p
+            className={`font-sans text-lg font-semibold ${totalBalance > 0
+              ? "text-green-600"
+              : totalBalance < 0
+                ? "text-red-600"
+                : "text-gray-500"
+              }`}
+          >
+            {totalBalance > 0
+              ? "You are owed money"
+              : totalBalance < 0
+                ? "You owe money"
+                : "All settled up"}
+          </p>
+
+
+        </div>
         <p className="text-sm text-[#C9B99A]">
           Your combined balance will appear here.
         </p>
