@@ -8,6 +8,7 @@ const {
   createGroup,
   getGroups,
   getGroupById,
+  updateGroup
 } = require("../controllers/groupController");
 
 const {
@@ -29,5 +30,7 @@ router.get("/:groupId/members", authMiddleware, getMembers);
 
 // Group balance
 router.get("/:groupId/balance", authMiddleware, balanceController);
+
+router.patch("/:groupId", authMiddleware, updateGroup)
 
 module.exports = router;

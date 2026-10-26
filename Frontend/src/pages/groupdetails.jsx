@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Settings } from "lucide-react";
 
 const API = `${import.meta.env.VITE_API_URL}/api`;
 
@@ -138,26 +139,37 @@ const GroupDetails = () => {
     <div className="min-h-screen bg-[#F8F4EA] px-5 py-6 text-[#211F1B]">
       <div className="mx-auto max-w-xl">
         {/* Header */}
-        <header className="mb-7 flex items-center gap-3">
+        <header className="mb-7 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              aria-label="Back to dashboard"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F1EBDD] text-2xl hover:bg-[#E9E1D1]"
+            >
+              ‹
+            </button>
+
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-bold">
+                {group?.icon || ""} {group?.name || "Group Details"}
+              </h1>
+              <p className="mt-0.5 text-sm text-[#756F65]">
+                {members.length} people
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
-            onClick={() => navigate("/dashboard")}
-            aria-label="Back to dashboard"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F1EBDD] text-2xl hover:bg-[#E9E1D1]"
+            onClick={() => navigate(`/groups/${groupId}/settings`)}
+            aria-label="Group settings"
+            title="Group settings"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F1EBDD] text-[#211F1B] hover:bg-[#E9E1D1]"
           >
-            ‹
+            <Settings size={20} />
           </button>
-
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold">
-              {group?.icon || ""} {group?.name || "Group Details"}
-            </h1>
-            <p className="mt-0.5 text-sm text-[#756F65]">
-              {members.length} people
-            </p>
-          </div>
         </header>
-
         {loading && (
           <p className="py-10 text-center text-sm text-[#756F65]">
             Loading group details...
@@ -209,9 +221,8 @@ const GroupDetails = () => {
                     >
                       <div className="flex min-w-0 items-center gap-2.5">
                         <div
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#F8F4EA] text-xs font-bold text-white ${
-                            avatarColors[index % avatarColors.length]
-                          }`}
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#F8F4EA] text-xs font-bold text-white ${avatarColors[index % avatarColors.length]
+                            }`}
                         >
                           {user.avatar ? (
                             <img
@@ -233,13 +244,12 @@ const GroupDetails = () => {
                       </div>
 
                       <span
-                        className={`shrink-0 text-right text-xs sm:text-sm ${
-                          balance > 0
+                        className={`shrink-0 text-right text-xs sm:text-sm ${balance > 0
                             ? "text-[#9DD7B7]"
                             : balance < 0
                               ? "text-[#FF866C]"
                               : "text-[#C9B99A]"
-                        }`}
+                          }`}
                       >
                         {balance > 0
                           ? `Gets back ${formatMoney(balance)}`
@@ -304,11 +314,10 @@ const GroupDetails = () => {
                   expenses.map((expense, index) => (
                     <div
                       key={expense._id}
-                      className={`flex items-center gap-3 p-4 ${
-                        index !== expenses.length - 1
+                      className={`flex items-center gap-3 p-4 ${index !== expenses.length - 1
                           ? "border-b border-[#E9E1D5]"
                           : ""
-                      }`}
+                        }`}
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F1EBDD] text-xl">
                         {expense.category === "Food"

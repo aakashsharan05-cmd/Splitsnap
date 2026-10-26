@@ -21,6 +21,7 @@
     "express": "^5.2.1",
     "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.61.0",
     "mongoose": "^9.9.4",
     "multer": "^2.4.0",
     "nodemon": "^3.1.14"

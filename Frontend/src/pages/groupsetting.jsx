@@ -1,51 +1,198 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 const GroupSettings = () => {
   const navigate = useNavigate();
+  const { groupId } = useParams();
 
-  const [groupName, setGroupName] = useState("Goa Trip");
+  const [groupName, setGroupName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("🏝️");
   const [alertLimit, setAlertLimit] = useState("1000");
 
-  const members = [
-    {
-      name: "Aakash Sharan",
-      email: "aakash@example.com",
-      initial: "A",
-      color: "#A58B5B",
-      role: "Admin",
-    },
-    {
-      name: "Riya Sharma",
-      email: "riya@example.com",
-      initial: "R",
-      color: "#C94B35",
-      role: "Member",
-    },
-    {
-      name: "Kabir Mehta",
-      email: "kabir@example.com",
-      initial: "K",
-      color: "#4778AE",
-      role: "Member",
-    },
-    {
-      name: "Dev Kumar",
-      email: "dev@example.com",
-      initial: "D",
-      color: "#92518B",
-      role: "Member",
-    },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [members, setMembers] = useState([]);
+
+
 
   const icons = ["🏝️", "⛰️", "🏢", "🍴", "✈️", "🏕️", "🏠", "🍺"];
+
+  const getToken = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login", { replace: true });
+      return null;
+    }
+
+    return token;
+  };
+
+
+  const fetchGroupDetails = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/groups/${groupId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch group details");
+      }
+
+      setGroupName(data.group.name ?? "");
+      setSelectedIcon(data.group.icon || "🏝️");
+      setAlertLimit(String(data.group.alertLimit ?? 1000));
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId, navigate]);
+
+
+
+  const fetchMemberDetails = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/groups/${groupId}/members`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch group details");
+      }
+      console.log("Members response:", data.members);
+      setMembers(data.members)
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
+    }
+  }
+
+  useEffect(() => {
+    fetchGroupDetails();
+    fetchMemberDetails();
+  }, [groupId]);
+
+
+  const handleSaveChanges = async (fields) => {
+    setError("");
+    setSuccess("");
+
+    if (fields.name !== undefined && !fields.name.trim()) {
+      setError("Group name cannot be empty.");
+      return;
+    }
+
+    if (
+      fields.alertLimit !== undefined &&
+      (fields.alertLimit.trim() === "" ||
+        !Number.isFinite(Number(fields.alertLimit)) ||
+        Number(fields.alertLimit) < 0)
+    ) {
+      setError("Enter a valid, non-negative alert limit.");
+      return;
+    }
+
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      setSaving(true);
+
+      const payload = { ...fields };
+
+      if (payload.name !== undefined) {
+        payload.name = payload.name.trim();
+      }
+
+      if (payload.alertLimit !== undefined) {
+        payload.alertLimit = Number(payload.alertLimit);
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/groups/${groupId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update group");
+      }
+
+      // Matches the current backend response: { message, updatedgroup }
+      const updatedGroup = data.updatedgroup;
+
+      if (updatedGroup) {
+        setGroupName(updatedGroup.name ?? "");
+        setSelectedIcon(updatedGroup.icon || "🏝️");
+        setAlertLimit(String(updatedGroup.alertLimit ?? 1000));
+      } else {
+        // If the backend returns { group } instead, use that property.
+        const group = data.group;
+
+        if (group) {
+          setGroupName(group.name ?? "");
+          setSelectedIcon(group.icon || "🏝️");
+          setAlertLimit(String(group.alertLimit ?? 1000));
+        }
+      }
+
+      setSuccess("Changes saved successfully!");
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F4EA] p-8 text-center">
+        Loading group settings...
+      </div>
+    );
+  }
+
+
+
+
 
   return (
     <div className="min-h-screen bg-[#F8F4EA] px-5 py-5 text-[#211F1B]">
       <div className="mx-auto max-w-xl">
-
         {/* Header */}
         <div className="mb-8 flex items-center gap-4">
           <button
@@ -67,6 +214,19 @@ const GroupSettings = () => {
           </div>
         </div>
 
+        {/* Feedback */}
+        {error && (
+          <p role="alert" className="mb-4 rounded-xl bg-red-100 p-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+
+        {success && (
+          <p role="status" className="mb-4 rounded-xl bg-green-100 p-3 text-sm text-green-800">
+            {success}
+          </p>
+        )}
+
         {/* Group Details */}
         <section className="rounded-2xl border border-[#DED6C7] bg-[#FFFDF8] p-5 sm:p-6">
           <h2 className="text-xl font-bold">Group Details</h2>
@@ -74,33 +234,34 @@ const GroupSettings = () => {
             Update your group name and icon.
           </p>
 
-          <label className="mt-5 block text-sm font-semibold">
+          <label className="mt-5 block text-sm font-semibold" htmlFor="groupName">
             Group name
           </label>
 
           <input
+            id="groupName"
             type="text"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             placeholder="e.g. Goa Trip 2026"
+            maxLength={100}
             className="mt-2 h-12 w-full rounded-xl border border-[#DED6C7] bg-[#FFFDF8] px-4 outline-none focus:border-[#756F65]"
           />
 
           <p className="mt-5 text-sm font-semibold">Group icon</p>
 
           <div className="mt-3 flex flex-wrap gap-3">
-            {icons.slice(0, 6).map((icon) => (
+            {icons.map((icon) => (
               <button
                 key={icon}
                 type="button"
                 aria-label={`Select ${icon} group icon`}
                 aria-pressed={selectedIcon === icon}
                 onClick={() => setSelectedIcon(icon)}
-                className={`flex h-12 w-12 items-center justify-center rounded-full bg-[#F1EBDD] text-2xl transition ${
-                  selectedIcon === icon
-                    ? "ring-2 ring-[#176B52] ring-offset-2"
-                    : "hover:bg-[#EAE1CF]"
-                }`}
+                className={`flex h-12 w-12 items-center justify-center rounded-full bg-[#F1EBDD] text-2xl transition ${selectedIcon === icon
+                  ? "ring-2 ring-[#176B52] ring-offset-2"
+                  : "hover:bg-[#EAE1CF]"
+                  }`}
               >
                 {icon}
               </button>
@@ -109,36 +270,32 @@ const GroupSettings = () => {
 
           <button
             type="button"
-            onClick={() => alert("More icons will be added later.")}
-            className="mt-4 flex items-center gap-3 text-sm text-[#756F65] hover:text-[#211F1B]"
+            disabled={saving}
+            onClick={() =>
+              handleSaveChanges({
+                name: groupName,
+                icon: selectedIcon,
+              })
+            }
+            className="mt-5 w-full rounded-xl bg-[#211F1B] py-3 font-semibold text-white transition hover:bg-[#39352F] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F1EBDD] text-xl">
-              +
-            </span>
-            Choose from more icons
-          </button>
-
-          <button
-            type="button"
-            onClick={() => alert("Group details API will be connected later.")}
-            className="mt-5 w-full rounded-xl bg-[#211F1B] py-3 font-semibold text-white transition hover:bg-[#39352F]"
-          >
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </section>
 
-        {/* Members */}
+        {/* Members — still hardcoded */}
         <section className="mt-5 rounded-2xl border border-[#DED6C7] bg-[#FFFDF8] p-5 sm:p-6">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold">
-                Members <span className="font-normal text-[#756F65]">({members.length})</span>
-              </h2>
-            </div>
+            <h2 className="text-lg font-bold">
+              Members{" "}
+              <span className="font-normal text-[#756F65]">
+                ({members.length})
+              </span>
+            </h2>
 
             <button
               type="button"
-              onClick={() => alert("Add Member functionality will be added later.")}
+              onClick={() => alert("Add Member functionality is not implemented yet.")}
               className="flex shrink-0 items-center gap-2 rounded-xl border border-[#316B52] px-3 py-2.5 text-sm font-semibold text-[#316B52] transition hover:bg-[#EAF3ED]"
             >
               <span className="text-lg leading-none">+</span>
@@ -149,48 +306,44 @@ const GroupSettings = () => {
           <div>
             {members.map((member, index) => (
               <div
-                key={member.email}
-                className={`flex items-center gap-3 py-4 ${
-                  index !== members.length - 1
-                    ? "border-b border-[#DED6C7]"
-                    : ""
-                }`}
+                key={member._id}
+                className={`flex items-center gap-3 py-4 ${index !== members.length - 1
+                  ? "border-b border-[#DED6C7]"
+                  : ""
+                  }`}
               >
-                {/* Avatar */}
                 <div
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base font-semibold text-white"
-                  style={{ backgroundColor: member.color }}
+                  style={{
+                    backgroundColor: "#A58B5B",
+                  }}
                 >
-                  {member.initial}
+                  {member.userId?.name?.charAt(0).toUpperCase()}
                 </div>
 
-                {/* Name and Email */}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold sm:text-base">
-                    {member.name}
+                    {member.userId?.name}
                   </p>
                   <p className="mt-1 truncate text-xs text-[#756F65] sm:text-sm">
-                    {member.email}
+                    {member.userId?.email}
                   </p>
                 </div>
 
-                {/* Role */}
                 <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-                    member.role === "Admin"
-                      ? "bg-[#EAF3ED] text-[#316B52]"
-                      : "bg-[#F1EBDD] text-[#756F65]"
-                  }`}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${member.role === "admin"
+                    ? "bg-[#EAF3ED] text-[#316B52]"
+                    : "bg-[#F1EBDD] text-[#756F65]"
+                    }`}
                 >
                   {member.role}
                 </span>
 
-                {/* Options */}
                 <button
                   type="button"
                   aria-label={`Options for ${member.name}`}
                   onClick={() =>
-                    alert(`Member options for ${member.name} will be added later.`)
+                    alert(`Member options for ${member.name} are not implemented yet.`)
                   }
                   className="shrink-0 rounded-lg px-2 py-1 text-xl leading-none text-[#756F65] hover:bg-[#F1EBDD]"
                 >
@@ -226,10 +379,11 @@ const GroupSettings = () => {
 
           <button
             type="button"
-            onClick={() => alert("Alert limit API will be connected later.")}
-            className="mt-4 w-full rounded-xl bg-[#211F1B] py-3 font-semibold text-white transition hover:bg-[#39352F]"
+            disabled={saving}
+            onClick={() => handleSaveChanges({ alertLimit })}
+            className="mt-4 w-full rounded-xl bg-[#211F1B] py-3 font-semibold text-white transition hover:bg-[#39352F] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Update Limit
+            {saving ? "Updating..." : "Update Limit"}
           </button>
 
           <p className="mt-3 text-xs leading-5 text-[#756F65]">
@@ -248,14 +402,13 @@ const GroupSettings = () => {
           <button
             type="button"
             onClick={() =>
-              alert("Group deletion will be implemented with backend confirmation.")
+              alert("Group deletion is not implemented yet.")
             }
             className="mt-4 w-full rounded-xl border border-red-400 bg-red-50 py-3 font-semibold text-red-600 transition hover:bg-red-100"
           >
             Delete Group
           </button>
         </section>
-
       </div>
     </div>
   );

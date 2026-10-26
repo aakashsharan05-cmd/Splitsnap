@@ -95,9 +95,68 @@ const getGroupById = async (req, res) => {
     });
   }
 };
+const updateGroup = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const userId = req.user.userId;
+
+    const membership = await GroupMember.findOne({
+      groupId,
+      userId,
+    });
+
+    if (!groupId) {
+      return res.status(403).json({
+        message: "User is not in the group",
+
+      });
+    }
+
+    if (!membership) {
+      return res.status(403).json({
+        message: "User is not in the group",
+
+      });
+    }
+    const { name, alertLimit, icon } = req.body;
+    const updateData = {};
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        message: "No fields provided to update",
+      });
+    }
+    if (name !== undefined) updateData.name = name;
+    if (icon !== undefined) updateData.icon = icon;
+    if (alertLimit !== undefined) updateData.alertLimit = alertLimit;
+
+    const updatedgroup = await Group.findByIdAndUpdate(
+      groupId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+    if (!updatedgroup) {
+      return res.status(404).json({
+        message: "User is not in the group",
+
+      });
+    }
+
+    return res.status(200).json({
+      message: "Group Updated successfully",
+      updatedgroup
+
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   createGroup,
   getGroups,
   getGroupById,
+  updateGroup
 };
