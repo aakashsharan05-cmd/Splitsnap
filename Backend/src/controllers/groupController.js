@@ -120,14 +120,15 @@ const updateGroup = async (req, res) => {
     }
     const { name, alertLimit, icon } = req.body;
     const updateData = {};
+    if(name !== undefined) updateData.name=name
+    if(icon !== undefined) updateData.icon=icon
+    if(alertLimit !== undefined) updateData.alertLimit=alertLimit
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({
         message: "No fields provided to update",
       });
     }
-    if (name !== undefined) updateData.name = name;
-    if (icon !== undefined) updateData.icon = icon;
-    if (alertLimit !== undefined) updateData.alertLimit = alertLimit;
+  
 
     const updatedgroup = await Group.findByIdAndUpdate(
       groupId,

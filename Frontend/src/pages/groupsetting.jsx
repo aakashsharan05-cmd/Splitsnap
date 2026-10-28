@@ -139,7 +139,8 @@ const GroupSettings = () => {
       if (payload.alertLimit !== undefined) {
         payload.alertLimit = Number(payload.alertLimit);
       }
-
+      console.log("Fields:", fields);
+      console.log("Payload:", payload);
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/groups/${groupId}`,
         {
@@ -225,6 +226,42 @@ const GroupSettings = () => {
 
     }
   };
+  const handleAddMember = async () => {
+    setError("");
+    setSuccess("");
+    if (selectedUser === null) {
+      setError("Please select a user first.");
+      return
+    }
+    try {
+      const token = getToken();
+      if (!token) return
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/groups/${groupId}/members`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: selectedUser._id })
+
+        }
+      );
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update group");
+      }
+      await fetchMemberDetails();
+      setShowAddMember(false);
+      setSelectedUser(null)
+      setSuccess("Member added successfully!");
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
+    }
+
+  }
 
   if (loading) {
     return (
@@ -350,6 +387,7 @@ const GroupSettings = () => {
                 setSelectedUser(null);
                 setError("");
                 setSuccess("");
+                handleAddMember()
               }}
               className="flex shrink-0 items-center gap-2 rounded-xl border border-[#316B52] px-3 py-2.5 text-sm font-semibold text-[#316B52] transition hover:bg-[#EAF3ED]"
             >
