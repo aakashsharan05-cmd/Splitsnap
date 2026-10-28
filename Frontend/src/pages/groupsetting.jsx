@@ -16,6 +16,12 @@ const GroupSettings = () => {
   const [success, setSuccess] = useState("");
   const [members, setMembers] = useState([]);
 
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [searching, setSearching] = useState(false);
+
 
 
   const icons = ["🏝️", "⛰️", "🏢", "🍴", "✈️", "🏕️", "🏠", "🍺"];
@@ -178,6 +184,48 @@ const GroupSettings = () => {
     }
   };
 
+  const handleSearchUser = async () => {
+
+
+    if (searchTerm.trim() === "") {
+      setSearchResults([]);
+      setSearching(false)
+      return;
+    }
+
+    setSearching(true)
+    setError("")
+    try {
+      const token = getToken();
+      if (!token) return;
+
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users?search=${encodeURIComponent(searchTerm.trim())}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update group");
+      }
+
+      setSearchResults(data.users)
+
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setSearching(false)
+
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8F4EA] p-8 text-center">
@@ -295,13 +343,72 @@ const GroupSettings = () => {
 
             <button
               type="button"
-              onClick={() => alert("Add Member functionality is not implemented yet.")}
+              onClick={() => {
+                setShowAddMember(true);
+                setSearchTerm("");
+                setSearchResults([]);
+                setSelectedUser(null);
+                setError("");
+                setSuccess("");
+              }}
               className="flex shrink-0 items-center gap-2 rounded-xl border border-[#316B52] px-3 py-2.5 text-sm font-semibold text-[#316B52] transition hover:bg-[#EAF3ED]"
             >
               <span className="text-lg leading-none">+</span>
               Add Member
             </button>
           </div>
+
+          {showAddMember && (
+            <div className="mt-4">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search users by name or email"
+                className="w-full rounded-xl border p-3"
+              />
+
+              <button
+                type="button"
+                onClick={handleSearchUser}
+                disabled={searching}
+                className="mt-3 rounded-xl bg-[#211F1B] px-5 py-2 font-semibold text-white disabled:opacity-60"
+              >
+                {searching ? "Searching..." : "Search"}
+              </button>
+              {selectedUser && (
+                <div className="mt-3 rounded-xl border border-[#DED6C7] p-3">
+                  <p className="font-semibold">{selectedUser.name}</p>
+                  <p className="text-sm text-[#756F65]">
+                    {selectedUser.email}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {searchResults.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {searchResults.map((user) => (
+                <div
+                  key={user._id}
+                  className="flex items-center justify-between rounded-xl border p-3"
+                >
+                  <div>
+                    <p className="font-semibold">{user.name}</p>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    Select
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div>
             {members.map((member, index) => (
