@@ -121,12 +121,23 @@ async function extractReceiptData(imagePath) {
         input: [
             {
                 type: "text",
-                text: `Read this receipt and extract:
-            merchant name,
-            total amount,
-            date,
-            category,
-            and all items with their amounts.`
+                text: `Extract merchant, final total amount, invoice date (YYYY-MM-DD),
+category and all purchased items with their amounts from this receipt.
+
+Choose exactly one category:
+- Food: restaurants, cafes, groceries, food
+- Shopping: clothes, electronics, retail
+- Transit: taxi, bus, train, fuel
+- Stay: hotels, accommodation
+- Fun: movies, games, entertainment
+- miscellaneous: anything that doesn't fit above.
+
+IMPORTANT:
+- Restaurant and food bills must always be categorized as Food.
+- Extract the final payable total, including taxes.
+- Do not include taxes as purchased items.
+- Do not invent missing information.
+- Return only JSON matching the provided schema.`
             },
             {
                 type: "image",

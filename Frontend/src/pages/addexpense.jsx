@@ -82,7 +82,7 @@ const Addexpense = () => {
         formData.append("receipt", receiptFile);
         setError("")
         try {
-           const token = localStorage.getItem("token");
+            const token = localStorage.getItem("token");
             if (!token) {
                 return
             }
@@ -94,18 +94,25 @@ const Addexpense = () => {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
-                    body : formData
+                    body: formData
                 }
             )
             console.log("Response status:", response.status);
-            const data =await response.json()
-            if(!response.ok){
-                 throw new Error(data.message || "Failed to update group");
+            const data = await response.json()
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to update group");
             }
-            console.log(data)
+            const categoryMap = {
+                Restaurant: "Food",
+                Grocery: "Food",
+                Transport: "Transit",
+                Hotel: "Stay",
+                Entertainment: "Fun",
+                Shopping: "Shopping"
+            };
             setDescription(data.receipt.merchant)
             setAmount(data.receipt.totalAmount)
-            setCategory(data.receipt.category)
+            setCategory(categoryMap[data.receipt.category] || "miscellaneous");
         } catch (error) {
             console.error("Upload failed:", error);
             setError(error.message || "something went  wrong")

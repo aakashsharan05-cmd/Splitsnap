@@ -2,202 +2,281 @@
 
 **Split expenses. Track balances. Settle up with ease.**
 
-SplitSnap is a full-stack expense-sharing application designed to help groups manage shared expenses, understand who owes whom, and record settlements. It also includes an AI-powered receipt-scanning workflow to help extract expense details from receipt images.
+SplitSnap is a full-stack expense-sharing application that helps friends, roommates, and groups manage shared expenses, track balances, and settle debts easily.
 
-> **Project status:** In development. Some features and integrations may still require testing or completion.
+It also includes an AI-powered receipt scanning feature that extracts expense information from uploaded receipt images, reducing manual data entry.
 
 ## ✨ Features
 
-- **Authentication** — User registration and login with password hashing and JWT-based authentication.
-- **Group management** — Create groups and manage group membership.
-- **Expense tracking** — Add expenses to a group and associate them with the person who paid.
-- **Flexible expense splitting** — Supports equal, exact-amount, and percentage-based split types in the backend.
-- **Balance calculation** — Calculate each member's net balance from group expenses and recorded settlements.
-- **Settlement workflow** — View suggested payments and record payments, including partial payments as the workflow is completed.
-- **Receipt scanning (AI)** — Upload receipt images and extract expense details using a vision-capable AI API.
-- **Responsive interface** — React-based UI styled with Tailwind CSS.
+- **User Authentication** – Secure registration and login using JWT authentication and bcrypt password hashing.
+- **Group Management** – Create groups, view group details, and add members.
+- **Expense Management** – Add and track expenses within groups.
+- **Flexible Expense Splitting**
+  - Equal split
+  - Exact amount split
+  - Percentage-based split
+- **Balance Calculation** – Calculate how much each group member owes or is owed.
+- **Settlement Management** – Record payments and manage outstanding balances.
+- **AI Receipt Scanning** – Extract merchant name, total amount, date, category, and purchased items from receipt images using Google Gemini.
+- **Image Uploads** – Store receipt images using ImageKit.
+- **Responsive UI** – Built with React and Tailwind CSS.
 
-Feature availability can vary while development is ongoing. Check the current implementation before relying on any feature in production.
+## 🛠️ Tech Stack
 
-## 🧰 Tech Stack
+| Category | Technologies |
+|---|---|
+| Frontend | React 19, Vite |
+| Styling | Tailwind CSS 4 |
+| Routing | React Router |
+| Backend | Node.js, Express.js |
+| Database | MongoDB, Mongoose |
+| Authentication | JWT, bcrypt |
+| File Upload | Multer |
+| Image Storage | ImageKit |
+| AI Integration | Google Gemini API |
+| Icons | Lucide React |
 
-### Frontend
-- React
-- Vite
-- Tailwind CSS
-- React Router
-
-### Backend
-- Node.js
-- Express.js
-- MongoDB
-- Mongoose
-- JWT authentication
-- bcrypt
-- Multer for file uploads
-- ImageKit for image hosting
-- Google Gemini API for receipt analysis
-
-## 🏗️ Architecture
+## 🏗️ Project Architecture
 
 ```text
-React + Vite frontend
-        |
-        | HTTP requests + JWT
-        v
-Node.js + Express API
-        |
-        +---- MongoDB / Mongoose
-        |
-        +---- ImageKit (receipt image storage)
-        |
-        +---- Gemini API (receipt extraction)
+SplitSnap/
+│
+├── Backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── db/
+│   │   ├── middleware/
+│   │   ├── model/
+│   │   ├── routes/
+│   │   └── services/
+│   │
+│   ├── server.js
+│   └── package.json
+│
+├── Frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── ...
+│   │
+│   └── package.json
+│
+└── README.md
+```
+
+### Application Flow
+
+```text
+React Frontend
+      |
+      | HTTP Requests + JWT
+      v
+Express.js Backend
+      |
+      ├── Authentication
+      ├── Group Management
+      ├── Expense Management
+      ├── Balance Calculation
+      ├── Settlement Management
+      |
+      ├── MongoDB
+      |
+      ├── ImageKit
+      |
+      └── Google Gemini API
+             |
+             v
+       Receipt Extraction
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-Install the following before running the project:
+Make sure you have the following installed:
 
 - Node.js (LTS recommended)
 - npm
-- MongoDB database (local or MongoDB Atlas)
-- ImageKit account and API credentials, if using receipt uploads
-- Google Gemini API key, if using AI receipt extraction
+- MongoDB (local installation or MongoDB Atlas)
+- ImageKit account
+- Google Gemini API key
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd <YOUR_PROJECT_FOLDER>
+git clone https://github.com/aakashsharan05-cmd/Splitsnap.git
+
+cd Splitsnap
 ```
 
-Replace the placeholders with your repository URL and folder name.
+### 2. Backend Setup
 
-### 2. Configure the backend
-
-Open the backend directory and install dependencies:
+Navigate to the backend directory:
 
 ```bash
-cd backend
+cd Backend
 npm install
 ```
 
-Create a `.env` file in the backend directory. Add the variable names expected by your implementation, for example:
+Create a `.env` file inside the `Backend` directory:
 
 ```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_strong_jwt_secret
+JWT_SECRET=your_jwt_secret
+
 GEMINI_API_KEY=your_gemini_api_key
+
 IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
 IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
 IMAGEKIT_URL_ENDPOINT=your_imagekit_url_endpoint
 ```
 
-**Important:** These are example names. Make sure they match the names read by your actual backend code. Do not commit `.env` or real credentials to GitHub.
+Replace the placeholder values with your credentials. Ensure the environment variable names match your backend implementation.
 
-Start the backend using the script configured in your `package.json`. For example, if your development script is `dev`:
+Start the backend server:
 
 ```bash
 npm run dev
 ```
 
-### 3. Configure the frontend
+The backend runs on:
 
-In a new terminal, open the frontend directory:
+```text
+http://localhost:5000
+```
+
+### 3. Frontend Setup
+
+Open another terminal and navigate to the frontend directory:
 
 ```bash
-cd frontend
+cd Frontend
 npm install
+```
+
+Create a `.env` file inside the `Frontend` directory:
+
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+Start the frontend:
+
+```bash
 npm run dev
 ```
 
-Vite will print the local development URL in the terminal. Open that URL in your browser.
+Open the local URL provided by Vite in your browser.
 
-If your frontend uses a hard-coded API URL, update it to your backend address. For a more maintainable setup, configure the API base URL through a Vite environment variable, such as `VITE_API_BASE_URL`, and read it with `import.meta.env.VITE_API_BASE_URL`.
+## 🔌 API Endpoints
 
-> The directory names and environment variable names above are examples. Adjust them to match the structure and configuration in your repository.
+All protected endpoints require a valid JWT token.
 
-## 🔌 API Overview
-
-The following routes reflect the current planned/implemented API structure. Confirm each route in your code before publishing this list as a guarantee.
-
-| Method | Endpoint | Purpose |
+| Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/auth/register` | Register a user |
-| `POST` | `/api/auth/login` | Log in |
-| `POST` | `/api/groups` | Create a group |
-| `GET` | `/api/groups` | Get the current user's groups |
-| `GET` | `/api/groups/:groupId` | Get group details |
-| `POST` | `/api/groups/:groupId/members` | Add a member to a group |
-| `GET` | `/api/groups/:groupId/members` | List group members |
-| `GET` | `/api/groups/:groupId/balance` | Get group balances |
-| `POST` | `/api/expenses/:groupId` | Create a group expense |
-| `GET` | `/api/expenses/:groupId` | List group expenses |
-| `POST` | `/api/settlements/:groupId` | Record a settlement |
-| `POST` | `/api/receipts/upload` | Upload and process a receipt |
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Authenticate user |
+| POST | `/api/groups` | Create a group |
+| GET | `/api/groups` | Get user's groups |
+| GET | `/api/groups/:groupId` | Get group details |
+| PATCH | `/api/groups/:groupId` | Update group |
+| POST | `/api/groups/:groupId/members` | Add a group member |
+| GET | `/api/groups/:groupId/members` | Get group members |
+| GET | `/api/groups/:groupId/balance` | Get group balances |
+| POST | `/api/expenses/:groupId` | Create an expense |
+| GET | `/api/expenses/:groupId` | Get group expenses |
+| POST | `/api/settlements/:groupId` | Record a settlement |
+| POST | `/api/receipts/upload` | Upload and scan a receipt |
 
-Authenticated routes require a valid JWT in the `Authorization` header:
+Authentication header:
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-## 🧮 Expense Splitting
+## 🧮 Expense Splitting Logic
 
-SplitSnap's backend supports three split types:
+SplitSnap supports three types of expense splitting.
 
-- **Equal split** — Divide an expense evenly among the selected participants.
-- **Exact split** — Assign a specific amount to each participant.
-- **Percentage split** — Assign a percentage of the expense to each participant.
+**1. Equal Split**
 
-The total of exact amounts should equal the expense amount, and percentage splits should total 100%. Currency rounding and participant validation should be tested carefully.
+Divides the expense equally among selected group members.
 
-## 🔐 Security Notes
+Example: ₹900 shared by 3 members = ₹300 each.
 
-- Passwords are hashed before storage.
-- Protected API routes use JWT authentication.
-- Keep API keys, database credentials, and JWT secrets in environment variables.
-- Validate group membership and authorization on the server for every protected operation.
-- Validate expense amounts, split totals, uploaded files, and settlement amounts on the backend.
-- Never trust client-submitted balances or use frontend calculations as the source of truth for financial validation.
+**2. Exact Amount Split**
 
-## 🗺️ Roadmap
+Allows users to assign specific amounts to individual members.
 
-- [ ] Finish and test partial settlement handling and outstanding-balance validation.
-- [ ] Reuse balance-calculation logic through a shared service.
-- [ ] Complete end-to-end testing of all frontend and backend workflows.
-- [ ] Finish receipt parsing and review extracted values before saving expenses.
-- [ ] Add expense analytics and monthly/category charts.
-- [ ] Implement group-specific balance threshold email alerts.
-- [ ] Improve loading, empty, and error states.
-- [ ] Deploy the frontend and backend.
-- [ ] Add screenshots or a short demo to this README.
+Example:
+- Member A: ₹400
+- Member B: ₹300
+- Member C: ₹200
 
-## 🧪 Testing Checklist
+**3. Percentage Split**
 
-Before using the app with real data, test at least:
+Divides expenses according to user-defined percentages.
 
-- Registration, login, and invalid credentials.
-- Requests with missing or invalid JWTs.
-- Attempts to access groups without membership.
-- Equal, exact, and percentage split calculations.
-- Decimal currency amounts and rounding.
-- Settlement amounts that are zero, negative, invalid, or greater than the outstanding debt.
-- Partial payments and the resulting remaining balance.
-- Invalid or oversized receipt uploads.
-- Missing or unavailable third-party API credentials.
+Example:
+- Member A: 50%
+- Member B: 30%
+- Member C: 20%
 
-## 🤝 Contributing
+The backend validates split totals and group membership.
 
-This is a learning and portfolio project. Suggestions, bug reports, and improvements are welcome. If you contribute, please describe the change and include steps to reproduce or test it.
+## 🤖 AI-Powered Receipt Scanning
 
-## 📄 License
+SplitSnap integrates Google Gemini to extract structured information from receipt images.
 
-No license has been specified yet. Add a `LICENSE` file before presenting this repository as open source.
+### How it works
+
+1. User uploads a receipt image.
+2. Backend receives the image using Multer.
+3. ImageKit stores the uploaded image.
+4. Google Gemini analyzes the receipt.
+5. Structured JSON data is extracted.
+6. Extracted expense details are returned to the frontend for review.
+
+### Extracted Information
+
+- Merchant name
+- Total amount
+- Transaction date
+- Expense category
+- Purchased items and their amounts
+
+This feature reduces manual expense entry and makes expense creation easier.
+
+## 🔐 Security
+
+- Password hashing using bcrypt.
+- JWT-based authentication.
+- Protected API routes.
+- Backend validation for expense amounts and split calculations.
+- Group membership verification.
+- Environment variables for sensitive credentials.
+
+**Never commit `.env` files, API keys, JWT secrets, or database credentials to GitHub.**
+
+## 🗺️ Future Improvements
+
+- Expense analytics dashboard.
+- Monthly and category-wise spending charts.
+- Member-wise spending analysis.
+- Group-specific balance threshold email alerts.
+- Improved receipt extraction accuracy.
+- Production deployment.
+- Automated backend and frontend testing.
+
+## 👨‍💻 Author
+
+**Aakash Sharan**
+
+- GitHub: [@aakashsharan05-cmd](https://github.com/aakashsharan05-cmd)
 
 ---
 
-**Built as a full-stack learning project with React, Node.js, Express, MongoDB, and AI-powered receipt processing.**
+Built with React, Node.js, Express, MongoDB, and Google Gemini.
+
+**Split smarter. Settle easier. 💸**
