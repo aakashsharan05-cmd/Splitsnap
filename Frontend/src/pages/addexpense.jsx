@@ -12,6 +12,8 @@ const Addexpense = () => {
     const [amount, setAmount] = useState("");
     const [group, setGroup] = useState(null);
     const [members, setMembers] = useState([]);
+    const [receiptFile, setReceiptFile] = useState(null);
+    const [scanning, setScanning] = useState(false);
     const { groupId } = useParams();
 
     useEffect(() => {
@@ -70,6 +72,50 @@ const Addexpense = () => {
     const getInitial = (name) =>
         name?.charAt(0)?.toUpperCase() || "U";
 
+    const handleScanReeipt = async (receiptFile) => {
+        if (receiptFile === null) {
+            return
+        }
+        setScanning(true)
+        console.log("handleScanReceipt called");
+        const formData = new FormData();
+        formData.append("receipt", receiptFile);
+        setError("")
+        try {
+           const token = localStorage.getItem("token");
+            if (!token) {
+                return
+            }
+            console.log("Sending request to backend");
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/receipts/upload`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body : formData
+                }
+            )
+            console.log("Response status:", response.status);
+            const data =await response.json()
+            if(!response.ok){
+                 throw new Error(data.message || "Failed to update group");
+            }
+            console.log(data)
+            setDescription(data.receipt.merchant)
+            setAmount(data.receipt.totalAmount)
+            setCategory(data.receipt.category)
+        } catch (error) {
+            console.error("Upload failed:", error);
+            setError(error.message || "something went  wrong")
+        } finally {
+            setScanning(false)
+
+        }
+
+    }
+
     return (
         <div>
             <div className="min-h-screen bg-[#F8F4EA] px-5 py-5 text-[#211F1B]">
@@ -96,7 +142,13 @@ const Addexpense = () => {
                     </div>
 
                     {/* Scan Receipt */}
-                    <div className="flex items-center gap-4 rounded-2xl border border-dashed border-[#C9B99A] bg-[#F3EEDF] p-5 cursor-pointer">
+
+                    <div
+                        onClick={() =>
+                            document.getElementById("receiptInput")?.click()
+                        }
+                        className="flex items-center gap-4 rounded-2xl border border-dashed border-[#C9B99A] bg-[#F3EEDF] p-5 cursor-pointer"
+                    >
                         <div className="w-13 h-13 rounded-xl bg-[#211E1A] text-[#F8D99F] flex items-center justify-center text-2xl">
                             📷
                         </div>
@@ -105,11 +157,29 @@ const Addexpense = () => {
                             <h3 className="font-semibold">
                                 Scan a receipt ✨
                             </h3>
+
+                            <input
+                                type="file"
+                                accept="image/*"
+                                hidden
+                                id="receiptInput"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+
+                                    if (file) {
+                                        setReceiptFile(file);
+                                        console.log("Selected receipt:", file.name);
+                                    }
+                                    handleScanReeipt(file)
+                                }}
+                            />
+
                             <p className="text-sm text-[#756F65] mt-1">
                                 AI reads the amount and splits it for you
                             </p>
                         </div>
                     </div>
+
 
                     {/* Manual Entry */}
                     <div className="mt-5 text-center font-light">
@@ -157,11 +227,10 @@ const Addexpense = () => {
                             <button
                                 key={item.value}
                                 onClick={() => setCategory(item.value)}
-                                className={`cursor-pointer rounded-full border px-4 py-2 ${
-                                    category === item.value
-                                        ? "bg-[#211E1A] text-white"
-                                        : "bg-[#FFFDF8] text-[#211F1B]"
-                                }`}
+                                className={`cursor-pointer rounded-full border px-4 py-2 ${category === item.value
+                                    ? "bg-[#211E1A] text-white"
+                                    : "bg-[#FFFDF8] text-[#211F1B]"
+                                    }`}
                             >
                                 {item.label}
                             </button>
@@ -186,11 +255,10 @@ const Addexpense = () => {
                                 >
                                     <button
                                         onClick={() => setPaidBy(userId)}
-                                        className={`w-12 h-12 border-2 bg-[#8B527D] text-white rounded-full flex items-center justify-center cursor-pointer ${
-                                            paidBy === userId
-                                                ? "border-black"
-                                                : "border-[#DED6C7]"
-                                        }`}
+                                        className={`w-12 h-12 border-2 bg-[#8B527D] text-white rounded-full flex items-center justify-center cursor-pointer ${paidBy === userId
+                                            ? "border-black"
+                                            : "border-[#DED6C7]"
+                                            }`}
                                     >
                                         {getInitial(name)}
                                     </button>

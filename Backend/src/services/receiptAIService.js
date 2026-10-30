@@ -116,7 +116,7 @@ async function extractReceiptData(imagePath) {
     };
 
     const interaction = await client.interactions.create({
-        model: "gemini-3.7-flash",
+        model: "gemini-3.6-flash",
 
         input: [
             {

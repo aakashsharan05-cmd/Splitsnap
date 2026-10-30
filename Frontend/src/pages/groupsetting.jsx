@@ -387,7 +387,7 @@ const GroupSettings = () => {
                 setSelectedUser(null);
                 setError("");
                 setSuccess("");
-                handleAddMember()
+
               }}
               className="flex shrink-0 items-center gap-2 rounded-xl border border-[#316B52] px-3 py-2.5 text-sm font-semibold text-[#316B52] transition hover:bg-[#EAF3ED]"
             >
@@ -420,6 +420,13 @@ const GroupSettings = () => {
                   <p className="text-sm text-[#756F65]">
                     {selectedUser.email}
                   </p>
+                  <button
+                    type="button"
+                    onClick={handleAddMember}
+                    className="mt-3 rounded-xl bg-[#211F1B] px-5 py-2 text-white"
+                  >
+                    Add Member
+                  </button>
                 </div>
               )}
             </div>

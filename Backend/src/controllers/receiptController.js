@@ -9,14 +9,21 @@ const uploadReceipt = async (req, res) => {
                 message: "No receipt uploaded"
             });
         }
-
+        console.log("1. Starting ImageKit upload");
         const response = await imagekit.files.upload({
             file: fs.createReadStream(req.file.path),
             fileName: req.file.originalname
         });
 
+        console.log("2. ImageKit upload completed");
+
+        console.log("3. Starting AI extraction");
+
         const receiptData = await extractReceiptData(req.file.path);
 
+        console.log("4. AI extraction completed");
+        console.log("Temp file path:", req.file.path);
+        console.log("File exists:", fs.existsSync(req.file.path));
         try {
             await fs.promises.unlink(req.file.path);
         } catch (error) {
@@ -30,9 +37,16 @@ const uploadReceipt = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({
-            message: "Server error",
-            error: error.message
+        console.error("Receipt upload error:", error);
+
+        if (error.status === 429) {
+            return res.status(429).json({
+                message: "AI receipt scanning limit reached. Please try again later."
+            });
+        }
+
+        return res.status(500).json({
+            message: "Receipt processing failed"
         });
     }
 };

@@ -32,7 +32,18 @@ const expenseSplit = async (req, res) => {
             });
         }
 
-        const amount = req.body.amount;
+        const amount = Number(req.body.amount);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return res.status(400).json({
+                message: " Aount should be greater than 0"
+            })
+        }
+        console.log("Amount:", req.body.amount, typeof req.body.amount);
+        console.log(
+            "Split amount:",
+            req.body.splits?.[0]?.amount,
+            typeof req.body.splits?.[0]?.amount
+        );
         const description = req.body.description;
         const category = req.body.category;
         const splitType = req.body.splitType;
@@ -81,18 +92,54 @@ const expenseSplit = async (req, res) => {
 
             const split = req.body.splits;
 
-            let sum = 0;
+            if (!Array.isArray(split) || split.length === 0) {
+                return res.status(400).json({
+                    message: "Splits must be a non-empty array"
+                });
+            }
+            const members = await GroupMember.find({ groupId });
 
+            const memberIds = new Set(
+                members.map((member) => member.userId.toString())
+            );
+
+            let sumPaise = 0;
+            const seenUsers = new Set();
             for (const s of split) {
-                sum += s.amount;
+                if (
+                    !Number.isFinite(s.amount) ||
+                    s.amount <= 0
+                ) {
+                    return res.status(400).json({
+                        message: "Amount should be grater than 0"
+                    });
+                }
+                if (!s.user) {
+                    return res.status(400).json({
+                        message: "Each memeber should be in group"
+                    });
+                }
+                if (seenUsers.has(s.user.toString())) {
+                    return res.status(400).json({
+                        message: "Same user"
+                    });
+                }
+                seenUsers.add(s.user.toString());
+                if (!memberIds.has(s.user.toString())) {
+                    return res.status(400).json({
+                        message: "Each memeber should be in group"
+                    });
+                }
+                sumPaise += Math.round(s.amount * 100);
             }
 
-            if (sum !== amount) {
+            const totalPaise = Math.round(amount * 100);
+
+            if (sumPaise !== totalPaise) {
                 return res.status(400).json({
                     message: "Split amounts must equal expense amount"
                 });
             }
-
             await Expense.create({
                 groupId,
                 description,
@@ -106,39 +153,95 @@ const expenseSplit = async (req, res) => {
 
 
         else if (splitType === "percentage") {
-
             const sp = req.body.splits;
 
+            if (!Array.isArray(sp) || sp.length === 0) {
+                return res.status(400).json({
+                    message: "Splits must be a non-empty array"
+                });
+            }
+
+            const members = await GroupMember.find({ groupId });
+            const memberIds = new Set(
+                members.map(member => member.userId.toString())
+            );
+
+            const seenUsers = new Set();
             let sum = 0;
 
-
             for (const s of sp) {
+                if (
+                    typeof s.percentage !== "number" ||
+                    !Number.isFinite(s.percentage) ||
+                    s.percentage <= 0 ||
+                    s.percentage > 100
+                ) {
+                    return res.status(400).json({
+                        message: "Percentage must be between 0 and 100"
+                    });
+                }
+
+                if (!s.user) {
+                    return res.status(400).json({
+                        message: "User is required for each split"
+                    });
+                }
+
+                const userId = s.user.toString();
+
+                if (!memberIds.has(userId)) {
+                    return res.status(400).json({
+                        message: "Each user must belong to the group"
+                    });
+                }
+
+                if (seenUsers.has(userId)) {
+                    return res.status(400).json({
+                        message: "Duplicate user in splits"
+                    });
+                }
+
+                seenUsers.add(userId);
                 sum += s.percentage;
             }
 
-            if (sum !== 100) {
+            
+            if (Math.abs(sum - 100) > 1e-9) {
                 return res.status(400).json({
                     message: "Percentage must total 100"
                 });
             }
 
-            const splits = [];
+           
+            const totalPaise = Math.round(amount * 100);
+            let allocatedPaise = 0;
 
+            const splits = sp.map(s => {
+                const sharePaise = Math.floor(
+                    totalPaise * s.percentage / 100
+                );
 
-            for (const s of sp) {
+                allocatedPaise += sharePaise;
 
-                const userAmount = amount * s.percentage / 100;
-
-                splits.push({
+                return {
                     user: s.user,
-                    amount: userAmount
-                });
+                    amount: sharePaise / 100
+                };
+            });
+
+           
+            let remainder = totalPaise - allocatedPaise;
+
+            for (let i = 0; remainder > 0; i++, remainder--) {
+                splits[i].amount += 0.01;
+                splits[i].amount = Math.round(splits[i].amount * 100) / 100;
             }
 
+            
             await Expense.create({
                 groupId,
                 description,
-                amount,
+                amount: totalPaise / 100,
                 paidBy,
                 category,
                 splitType,
