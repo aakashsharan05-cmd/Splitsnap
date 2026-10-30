@@ -102,10 +102,10 @@ const settlementController = async (req, res) => {
             message: "Settlement created successfully"
         });
 
-    } catch (error) {
+    } catch {
         res.status(500).json({
             message: "Server error",
-            error: error.message
+            
         });
     }
 }

@@ -3,7 +3,7 @@ const Settlement = require("../model/settlement.model");
 const Expense = require("../model/expense.model");
 
 const getGroupBalances = async (groupId) => {
-    try {
+ 
         const [expenses, settlements, members] = await Promise.all([
             Expense.find({ groupId }),
             Settlement.find({ groupId }),
@@ -27,8 +27,7 @@ const getGroupBalances = async (groupId) => {
         };
         for (const expense of expenses) {
             // Step A: expense ka payer nikalo
-            const payerId = expense.paidBy
-            const amount = expense.amount
+            const payerId = expense.paidBy           
             const payerBalance = getBalance(payerId);
             payerBalance.balance += Number(expense.amount);
             for (const split of expense.splits) {
@@ -52,10 +51,7 @@ const getGroupBalances = async (groupId) => {
             touserBalance.balance -= Number(amount);
         }
         return finalAmount
-    } catch (error) {
-
-        throw error;
-    }
+   
 };
 
 module.exports = { getGroupBalances };

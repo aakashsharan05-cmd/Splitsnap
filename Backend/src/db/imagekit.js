@@ -1,7 +1,15 @@
 const ImageKit = require("@imagekit/nodejs");
 
-const client = new ImageKit({
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY
-});
+let client;
 
-module.exports = client;
+const getImageKitClient = () => {
+    if (!client) {
+        client = new ImageKit({
+            privateKey: process.env.IMAGEKIT_PRIVATE_KEY
+        });
+    }
+
+    return client;
+};
+
+module.exports = getImageKitClient;

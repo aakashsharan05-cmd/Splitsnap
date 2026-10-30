@@ -11,7 +11,7 @@ const registerUser = async (req, res) => {
         });
 
         if (isUserExist) {
-            return res.status(400).json({
+            return res.status(401).json({
                 message: "User already exists"
             });
         }
@@ -36,10 +36,10 @@ const registerUser = async (req, res) => {
         });
 
 
-    } catch (error) {
+    } catch  {
         res.status(500).json({
             message: "Server error",
-            error: error.message
+           
         });
     }
 };
@@ -70,15 +70,15 @@ const loginUser = async (req, res) => {
             }
 
         } else {
-            return res.status(400).json({
+            return res.status(401).json({
                 message: "User did not  exists"
             });
         }
 
-    } catch (error) {
+    } catch  {
         res.status(500).json({
             message: "Server error",
-            error: error.message
+           
         });
     }
 

@@ -22,11 +22,11 @@ async function authUser(req, res, next) {
 
         next();
 
-    } catch (err) {
-        return res.status(401).json({
-            message: "Invalid or expired token"
-        });
-    }
+    } catch {
+    return res.status(401).json({
+        message: "Invalid or expired token"
+    });
+}
 }
 
 module.exports = authUser;

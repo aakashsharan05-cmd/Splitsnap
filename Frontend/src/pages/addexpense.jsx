@@ -77,7 +77,7 @@ const Addexpense = () => {
             return
         }
         setScanning(true)
-        console.log("handleScanReceipt called");
+       
         const formData = new FormData();
         formData.append("receipt", receiptFile);
         setError("")
@@ -86,7 +86,7 @@ const Addexpense = () => {
             if (!token) {
                 return
             }
-            console.log("Sending request to backend");
+         
             const response = await fetch(
                 `${import.meta.env.VITE_API_URL}/api/receipts/upload`,
                 {
@@ -97,7 +97,7 @@ const Addexpense = () => {
                     body: formData
                 }
             )
-            console.log("Response status:", response.status);
+           
             const data = await response.json()
             if (!response.ok) {
                 throw new Error(data.message || "Failed to update group");
@@ -175,7 +175,7 @@ const Addexpense = () => {
 
                                     if (file) {
                                         setReceiptFile(file);
-                                        console.log("Selected receipt:", file.name);
+                                      
                                     }
                                     handleScanReeipt(file)
                                 }}

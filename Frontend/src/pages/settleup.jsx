@@ -51,9 +51,9 @@ const SettleUp = () => {
         );
 
         setSettlement(mySettlements);
-        console.log("Settlement state data:", sSettlement);
+       
         setBalances(data.finalAmount || []);
-        console.log("API balances:", data.finalAmount);
+       
 
       } catch (err) {
         setError(err.message || "Something went wrong");
@@ -68,8 +68,7 @@ const SettleUp = () => {
   const balanceCalculator = (balances) => {
     const creditor = balances.filter(num => num.balance > 0)
     const debtors = balances.filter(num => num.balance < 0)
-    console.log("Creditors:", creditor);
-    console.log("Debtors:", debtors);
+   
     const ccreditor = creditor.map(item => ({
       ...item
     }));
@@ -100,7 +99,7 @@ const SettleUp = () => {
       if (Math.abs(ccreditor[i].balance) < 0.01) i++
       if (Math.abs(cdebitors[j].balance) < 0.01) j++
     }
-    console.log("Suggested settlements:", sSettlement);
+    
     return { ccreditor, cdebitors, sSettlement }
 
 
@@ -119,7 +118,7 @@ const SettleUp = () => {
         atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
       );
 
-      console.log("Logged-in user ID:", payload.userId);
+      
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/settlements/${groupId}`,
         {
@@ -139,7 +138,7 @@ const SettleUp = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        console.log("Settlement API error:", data);
+       
         throw new Error(
           data.message || "Failed to fetch balances"
         );

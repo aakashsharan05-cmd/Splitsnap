@@ -92,7 +92,7 @@ const GroupSettings = () => {
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch group details");
       }
-      console.log("Members response:", data.members);
+   
       setMembers(data.members)
     } catch (err) {
       setError(err.message || "Something went wrong.");
@@ -139,8 +139,7 @@ const GroupSettings = () => {
       if (payload.alertLimit !== undefined) {
         payload.alertLimit = Number(payload.alertLimit);
       }
-      console.log("Fields:", fields);
-      console.log("Payload:", payload);
+     
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/groups/${groupId}`,
         {

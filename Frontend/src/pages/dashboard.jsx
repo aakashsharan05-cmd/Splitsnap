@@ -88,20 +88,20 @@ const Dashboard = () => {
         let totalBalance = 0;
 
         for (const groupBalances of allBalances) {
-          console.log("Group balances:", groupBalances);
+       
 
           const userBalance = groupBalances.find(
             (item) => String(item.user) === String(userId)
           );
 
-          console.log("My balance in this group:", userBalance?.balance);
+        
 
           if (userBalance) {
             totalBalance += userBalance.balance;
           }
         }
 
-        console.log("Combined balance:", totalBalance);
+   
         setTotalBalance(totalBalance);
       } catch (err) {
         setError(

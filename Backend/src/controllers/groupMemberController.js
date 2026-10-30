@@ -51,10 +51,10 @@ const addMember = async (req, res) => {
             message: "Member added successfully"
         });
 
-    } catch (error) {
+    } catch  {
         res.status(500).json({
             message: "Server error",
-            error: error.message
+            
         });
     }
 };
@@ -83,10 +83,10 @@ const getMembers = async (req, res) => {
             members
         });
 
-    } catch (error) {
+    } catch {
         return res.status(500).json({
             message: "Server error",
-            error: error.message
+           
         });
     }
 };

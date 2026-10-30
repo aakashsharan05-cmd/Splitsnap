@@ -1,5 +1,4 @@
 const GroupMember = require("../model/group.member.model");
-const User = require("../model/user.model");
 const Expense = require("../model/expense.model");
 
 const expenseSplit = async (req, res) => {
@@ -38,12 +37,7 @@ const expenseSplit = async (req, res) => {
                 message: " Aount should be greater than 0"
             })
         }
-        console.log("Amount:", req.body.amount, typeof req.body.amount);
-        console.log(
-            "Split amount:",
-            req.body.splits?.[0]?.amount,
-            typeof req.body.splits?.[0]?.amount
-        );
+       
         const description = req.body.description;
         const category = req.body.category;
         const splitType = req.body.splitType;
@@ -259,10 +253,10 @@ const expenseSplit = async (req, res) => {
             message: "Expense added successfully"
         });
 
-    } catch (error) {
+    } catch {
         return res.status(500).json({
             message: "Server error",
-            error: error.message
+            
         });
     }
 };
@@ -291,10 +285,10 @@ const getGroupExpenses = async (req, res) => {
             expenses
         });
 
-    } catch (error) {
+    } catch  {
         return res.status(500).json({
             message: "Server error",
-            error: error.message
+            
         });
     }
 }

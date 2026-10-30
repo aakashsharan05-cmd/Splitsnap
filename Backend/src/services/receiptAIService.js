@@ -160,7 +160,7 @@ IMPORTANT:
 
     try {
         receiptData = JSON.parse(interaction.output_text);
-    } catch (error) {
+    } catch  {
         throw new Error("Gemini returned invalid JSON");
     }
 

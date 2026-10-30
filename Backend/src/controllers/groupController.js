@@ -28,10 +28,10 @@ const createGroup = async (req, res) => {
         icon: group.icon,
       },
     });
-  } catch (error) {
+  } catch {
     return res.status(500).json({
       message: "Server error",
-      error: error.message,
+     
     });
   }
 };
@@ -47,10 +47,10 @@ const getGroups = async (req, res) => {
       .map((membership) => membership.groupId);
 
     return res.status(200).json({ groups });
-  } catch (error) {
+  } catch {
     return res.status(500).json({
       message: "Server error",
-      error: error.message,
+      
     });
   }
 };
@@ -91,7 +91,7 @@ const getGroupById = async (req, res) => {
 
     return res.status(500).json({
       message: "Server error",
-      error: error.message,
+      
     });
   }
 };
@@ -147,10 +147,10 @@ const updateGroup = async (req, res) => {
       updatedgroup
 
     });
-  } catch (error) {
+  } catch  {
     return res.status(500).json({
       message: "Server error",
-      error: error.message,
+   
     });
   }
 };

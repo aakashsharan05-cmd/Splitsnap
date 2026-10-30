@@ -1,12 +1,32 @@
-const multer = require("multer")
+const multer = require("multer");
+const path = require("path");
+const crypto = require("crypto");
 
 const storage = multer.diskStorage({
     destination: "uploads/",
+
     filename: (req, file, cb) => {
-        cb(null, file.originalname);
+        const uniqueName = `${crypto.randomUUID()}${path.extname(file.originalname)}`;
+        cb(null, uniqueName);
     }
-})
+});
 
-const upload = multer({ storage })
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-module.exports = upload
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error("Only JPEG, PNG and WebP images are allowed"), false);
+    }
+};
+
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    }
+});
+
+module.exports = upload;
