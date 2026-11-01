@@ -34,7 +34,7 @@ const expenseSplit = async (req, res) => {
         const amount = Number(req.body.amount);
         if (!Number.isFinite(amount) || amount <= 0) {
             return res.status(400).json({
-                message: " Aount should be greater than 0"
+                message: " Amount should be greater than 0"
             })
         }
        
