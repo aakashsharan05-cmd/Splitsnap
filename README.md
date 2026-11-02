@@ -1,101 +1,207 @@
-# 💸 SplitSnap — AI-Powered Expense Splitting
+# SplitSnap 💸
 
-<p align="center">
-  <strong>Split expenses. Stay even. Keep it simple.</strong><br/>
-  <a href="https://splitsnap-1.onrender.com">🚀 Live Demo</a>
-</p>
+**Split expenses. Scan receipts. Settle up without the awkward math.**
 
-## 🌐 Live Demo
-**Frontend:** https://splitsnap-1.onrender.com
+SplitSnap is a full-stack expense-sharing app for groups (roommates, trips, friends). Add an expense, choose how to split it, and SplitSnap keeps track of who owes whom. Snap a photo of a receipt and let AI pull out the details for you.
 
-> The app is hosted on Render's free tier; the first visit may take a little time while the service wakes up.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-splitsnap--1.onrender.com-1f1d19?style=for-the-badge)](https://splitsnap-1.onrender.com)
 
-## 📸 Screenshots
+> **Note:** The demo is hosted on Render's free tier, so the first load after a period of inactivity can take up to a minute while the server wakes up.
 
-### Login
-![SplitSnap Login](screenshots/login.png)
+> **Status:** Work in progress. Core flows (auth, groups, expenses, balances, receipt scanning) are working; analytics and alerts are on the roadmap. See [Roadmap](#roadmap).
 
-### Dashboard
-![SplitSnap Dashboard](screenshots/dashboard.png)
+---
 
-### Group Balances
-![Group balances and members](screenshots/group-balances.png)
+## Screenshots
 
-### Expenses
-![Expenses list](screenshots/expenses-list.png)
+| Login | Dashboard |
+|:---:|:---:|
+| <img src="docs/login.png" alt="Login screen" width="420"> | <img src="docs/dashboard.png" alt="Dashboard with combined balance across groups" width="420"> |
 
-### Add Expense
-![Add expense form](screenshots/add-expense.png)
+| Group balances | Expenses |
+|:---:|:---:|
+| <img src="docs/group-balances.png" alt="Group page showing who owes whom" width="420"> | <img src="docs/expenses-list.png" alt="Expense list with Add expense and Settle up actions" width="420"> |
 
-### Choose Participants
-![Choose participants for an expense](screenshots/choose-members.png)
+| Add expense |
+|:---:|
+| <img src="docs/add-expense.png" alt="Add expense form with categories and payer selection" width="420"> |
 
-### Settlement
-![Settlement screen](screenshots/settlement.png)
+<!-- Add after retaking: | Settle up | <img src="docs/settle-up.png" width="420"> | -->
 
-## ✨ Features
-- 🔐 User registration and login
-- 👥 Create groups and manage group members
-- 💸 Add, edit, and delete group expenses
-- ⚖️ Equal, percentage, and exact expense splits
-- 📊 View group balances and track who owes whom
-- 🤝 Suggested settlements to reduce the number of transactions
-- 🤖 AI-powered receipt scanning to help extract expense details
-- 🧾 Expense categories (Food, Shopping, Transit, Stay, Fun, Miscellaneous)
-- 🔔 Group-level balance alert threshold
+---
 
-## 🛠️ Tech Stack
+## Features
 
-| Area | Technologies |
-|---|---|
-| Frontend | React, Vite, Tailwind CSS |
-| Backend | Node.js, Express.js |
-| Database | MongoDB Atlas, Mongoose |
-| Authentication | JWT, bcrypt |
-| AI | Google Gemini |
-| Image hosting | ImageKit |
-| Deployment | Render |
+- **Authentication**: Register and log in with bcrypt-hashed passwords and JWT sessions.
+- **Groups**: Create groups, add members, and see everyone's balance at a glance.
+- **Dashboard**: One combined balance across all your groups.
+- **Expenses with categories**: Food, Shopping, Transit, Stay, Fun and Miscellaneous, with a "paid by" selector.
+- **Three split modes**: Equal, exact amount, and percentage.
+- **Balances**: Per-member net balance ("gets back" / "owes") calculated from expenses and settlements.
+- **Settle up**: Suggested payments to clear the group, plus a one-tap "mark group as settled".
+- **AI receipt scanning**: Upload a receipt photo, Gemini reads the amount and details, then you review before saving.
+- **Responsive UI**: React + Tailwind CSS.
 
-## 🚀 Run Locally
+---
 
-### 1. Clone the repository
-```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd SplitSnap
+## Tech Stack
+
+| Layer    | Tech |
+|----------|------|
+| Frontend | React, Vite, Tailwind CSS, React Router |
+| Backend  | Node.js, Express.js, Mongoose |
+| Database | MongoDB (local or Atlas) |
+| Auth     | JWT, bcrypt |
+| Uploads  | Multer, ImageKit |
+| AI       | Google Gemini API (receipt extraction) |
+| Hosting  | Render |
+
+---
+
+## Architecture
+
+```
+React + Vite (Frontend)
+        │  HTTP + JWT
+        ▼
+Express API (Backend)
+   ├── MongoDB / Mongoose   → users, groups, expenses, settlements
+   ├── ImageKit             → receipt image storage
+   └── Gemini API           → receipt data extraction
 ```
 
-### 2. Start backend
+### Project structure
+
+```
+Splitsnap/
+├── Backend/    # Express API, models, routes, controllers
+├── Frontend/   # React + Vite client
+├── docs/       # README screenshots
+└── README.md
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (LTS) and npm
+- A MongoDB connection string (local or [MongoDB Atlas](https://www.mongodb.com/atlas))
+- An [ImageKit](https://imagekit.io/) account (for receipt uploads)
+- A [Google Gemini API key](https://aistudio.google.com/) (for receipt scanning)
+
+### 1. Clone
+
+```bash
+git clone https://github.com/aakashsharan05-cmd/Splitsnap.git
+cd Splitsnap
+```
+
+### 2. Backend
+
 ```bash
 cd Backend
 npm install
+```
+
+Create `Backend/.env`:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=a_long_random_secret
+GEMINI_API_KEY=your_gemini_api_key
+IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
+IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
+IMAGEKIT_URL_ENDPOINT=your_imagekit_url_endpoint
+```
+
+Start the server:
+
+```bash
 npm run dev
 ```
-Configure the backend `.env` with the MongoDB connection string, JWT secret, and any API credentials needed. **Never commit secrets or `.env` files.**
 
-### 3. Start frontend (in a separate terminal)
+### 3. Frontend
+
+Open a new terminal:
+
 ```bash
 cd Frontend
 npm install
 npm run dev
 ```
-Set `Frontend/.env` with your local backend API URL:
-```env
-VITE_API_URL=http://localhost:YOUR_BACKEND_PORT
-```
-Replace the placeholder with the port configured in your backend.
 
-## 📂 Project Structure
-```text
-SplitSnap/
-├── Frontend/
-└── Backend/
-```
+Open the URL Vite prints (usually `http://localhost:5173`).
 
-## 🎯 About
-SplitSnap is a full-stack portfolio project demonstrating group expense-sharing workflows, REST API development, database-backed user/group management, and AI-assisted receipt processing.
-
-## 👨‍💻 Author
-Built as a full-stack portfolio project.
+> Never commit `.env` files. Real keys stay local; share only a `.env.example`.
 
 ---
-<p align="center">Made with ❤️ to make group expenses easier.</p>
+
+## API Overview
+
+All routes except register/login need `Authorization: Bearer <JWT>`.
+
+| Method | Endpoint                       | Description                  |
+|--------|--------------------------------|------------------------------|
+| POST   | `/api/auth/register`           | Create an account            |
+| POST   | `/api/auth/login`              | Log in, receive a JWT        |
+| POST   | `/api/groups`                  | Create a group               |
+| GET    | `/api/groups`                  | List your groups             |
+| GET    | `/api/groups/:groupId`         | Group details                |
+| POST   | `/api/groups/:groupId/members` | Add a member                 |
+| GET    | `/api/groups/:groupId/members` | List members                 |
+| GET    | `/api/groups/:groupId/balance` | Net balance per member       |
+| POST   | `/api/expenses/:groupId`       | Add an expense               |
+| GET    | `/api/expenses/:groupId`       | List expenses                |
+| POST   | `/api/settlements/:groupId`    | Record a settlement          |
+| POST   | `/api/receipts/upload`         | Upload and scan a receipt    |
+
+---
+
+## How Splitting Works
+
+| Mode           | Rule |
+|----------------|------|
+| **Equal**      | Total ÷ number of participants |
+| **Exact**      | Each person's amount is given; amounts must add up to the total |
+| **Percentage** | Each person's share is given in %; percentages must add up to 100 |
+
+**Balance logic:** for every member, `net = (what they paid) − (what they owe) ± settlements`. Positive means they get money back, negative means they owe. Across a group, all positives and negatives cancel out to zero.
+
+---
+
+## Security Notes
+
+- Passwords are hashed with bcrypt, never stored in plain text.
+- Protected routes verify the JWT on every request.
+- Group membership is checked on the server before reading or changing group data.
+- Amounts, split totals and uploads are validated on the backend; the client is never trusted for money logic.
+- Secrets live in environment variables only.
+
+---
+
+## Roadmap
+
+- [ ] Store money as integers (paise) to avoid floating-point rounding errors
+- [ ] Unit tests for split, balance and settle-up logic
+- [ ] Partial settlements with outstanding-balance validation
+- [ ] Expense analytics (monthly / category charts)
+- [ ] Balance-threshold email alerts
+- [ ] Better loading, empty and error states
+- [ ] Demo GIF of the full flow
+
+---
+
+## Contributing
+
+This is a learning and portfolio project. Bug reports and suggestions are welcome: open an issue with steps to reproduce.
+
+## License
+
+MIT, see [LICENSE](LICENSE). _(Add a `LICENSE` file to the repo.)_
+
+---
+
+Built by [@aakashsharan05-cmd](https://github.com/aakashsharan05-cmd) with React, Node.js, Express, MongoDB and Gemini.
