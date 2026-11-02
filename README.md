@@ -20,7 +20,7 @@ SplitSnap is a full-stack expense-sharing app for groups (roommates, trips, frie
 
 | Group balances | Expenses |
 |:---:|:---:|
-| <img src="docs/group-balances.png" alt="Group page showing who owes whom" width="420"> | <img src="docs/expenses-list.png" alt="Expense list with Add expense and Settle up actions" width="420"> |
+| <img src="docs/`group-balances`.png" alt="Group page showing who owes whom" width="420"> | <img src="docs/expenses-list.png" alt="Expense list with Add expense and Settle up actions" width="420"> |
 
 | Add expense |
 |:---:|
@@ -109,12 +109,11 @@ Create `Backend/.env`:
 
 ```env
 PORT=5000
-MONGODB_URI=your_mongodb_connection_string
+MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=a_long_random_secret
 GEMINI_API_KEY=your_gemini_api_key
-IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
 IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-IMAGEKIT_URL_ENDPOINT=your_imagekit_url_endpoint
+FRONTEND_URL=Frontend Url
 ```
 
 Start the server:
