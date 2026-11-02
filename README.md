@@ -20,7 +20,7 @@ SplitSnap is a full-stack expense-sharing app for groups (roommates, trips, frie
 
 | Group balances | Expenses |
 |:---:|:---:|
-| <img src="docs/`group-balances`.png" alt="Group page showing who owes whom" width="420"> | <img src="docs/expenses-list.png" alt="Expense list with Add expense and Settle up actions" width="420"> |
+| <img src="docs/group-balances.png" alt="Group page showing who owes whom" width="420"> | <img src="docs/expenses-list.png" alt="Expense list with Add expense and Settle up actions" width="420"> |
 
 | Add expense |
 |:---:|
