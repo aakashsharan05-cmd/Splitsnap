@@ -14,7 +14,7 @@ const usertRoutes = require("./routes/userRoutes");
 const app = express();
 
 const allowedOrigins = [
-    "http://localhost:5173",
+    "https://splitsnap-1.onrender.com",
     process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -24,11 +24,10 @@ app.use(cors({
             return callback(null, true);
         }
 
-        return callback(new Error("Not allowed by CORS"));
+        return callback(null, false);
     },
     credentials: true
 }));
-
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
