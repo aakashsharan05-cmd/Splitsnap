@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 const SettleUp = () => {
   const navigate = useNavigate();
   const { groupId } = useParams();
+  const [group, setGroup] = useState(null);
   const [balances, setBalances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,16 +45,31 @@ const SettleUp = () => {
             data.message || "Failed to fetch balances"
           );
         }
+        const groupResponse = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/groups/${groupId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const groupData = await groupResponse.json();
+
+        if (!groupResponse.ok) {
+          throw new Error(groupData.message || "Failed to fetch group");
+        }
+
+        setGroup(groupData.group || groupData);
         const { sSettlement } = balanceCalculator(data.finalAmount);
 
         const mySettlements = sSettlement.filter(
           (member) => member.from === userId
         );
 
-        setSettlement(mySettlements);
-       
+        setSettlement(mySettlements);        
         setBalances(data.finalAmount || []);
-       
+
 
       } catch (err) {
         setError(err.message || "Something went wrong");
@@ -68,7 +84,7 @@ const SettleUp = () => {
   const balanceCalculator = (balances) => {
     const creditor = balances.filter(num => num.balance > 0)
     const debtors = balances.filter(num => num.balance < 0)
-   
+
     const ccreditor = creditor.map(item => ({
       ...item
     }));
@@ -99,7 +115,7 @@ const SettleUp = () => {
       if (Math.abs(ccreditor[i].balance) < 0.01) i++
       if (Math.abs(cdebitors[j].balance) < 0.01) j++
     }
-    
+
     return { ccreditor, cdebitors, sSettlement }
 
 
@@ -118,7 +134,7 @@ const SettleUp = () => {
         atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
       );
 
-      
+
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/settlements/${groupId}`,
         {
@@ -138,7 +154,7 @@ const SettleUp = () => {
       const data = await response.json();
 
       if (!response.ok) {
-       
+
         throw new Error(
           data.message || "Failed to fetch balances"
         );
@@ -166,7 +182,7 @@ const SettleUp = () => {
               Settle up
             </h1>
             <p className="text-sm text-[#756F65] mt-1">
-              Goa Trip
+              {group?.name || "Loading group..."}
             </p>
           </div>
         </div>
@@ -276,20 +292,13 @@ const SettleUp = () => {
 
           {settlement.length === 0 && !loading && (
             <p className="py-8 text-center text-sm text-[#756F65]">
-              Everyone is settled up!
+              you are settled up!
             </p>
           )}
         </div>
 
         {/* Settle entire group */}
-        <button
-          type="button"
 
-          className="mt-6 w-full flex items-center justify-center gap-3 rounded-2xl bg-[#211F1B] px-4 py-4 text-white font-semibold hover:bg-[#39352F] transition"
-        >
-          <span aria-hidden="true">🎉</span>
-          Mark entire group as settled
-        </button>
       </div>
     </div>
   );
