@@ -8,7 +8,7 @@ SplitSnap is a full-stack expense-sharing app for groups (roommates, trips, frie
 
 > **Note:** The demo is hosted on Render's free tier, so the first load after a period of inactivity can take up to a minute while the server wakes up.
 
-> **Status:** Work in progress. Core flows (auth, groups, expenses, balances, receipt scanning) are working; analytics and alerts are on the roadmap. See [Roadmap](#roadmap).
+
 
 ---
 
@@ -182,17 +182,9 @@ All routes except register/login need `Authorization: Bearer <JWT>`.
 
 ---
 
-## Roadmap
 
-- [ ] Store money as integers (paise) to avoid floating-point rounding errors
-- [ ] Unit tests for split, balance and settle-up logic
-- [ ] Partial settlements with outstanding-balance validation
-- [ ] Expense analytics (monthly / category charts)
-- [ ] Balance-threshold email alerts
-- [ ] Better loading, empty and error states
-- [ ] Demo GIF of the full flow
 
----
+
 
 ## Contributing
 
